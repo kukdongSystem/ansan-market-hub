@@ -64,7 +64,7 @@ export default function LoginPage() {
               className={styles.input} 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@ansan.com"
+              placeholder="이메일을 입력하세요"
               required 
             />
           </div>
@@ -96,13 +96,6 @@ export default function LoginPage() {
 
         {message && <div className={styles.errorMessage}>{message}</div>}
         
-        <div className={styles.testAccountInfo}>
-            <p><strong>테스트 계정:</strong></p>
-            {accounts.map(acc => (
-                <p key={acc.email}>• {acc.role === 'admin' ? '관리자' : '입점주'}: {acc.email} / {acc.password}</p>
-            ))}
-        </div>
-
         <div className={styles.footer}>
           <p>© 2026 안산유통단지 AI 관제센터</p>
         </div>
