@@ -114,6 +114,18 @@ export default function Home() {
           </div>
           
           <div className={styles.navLinks}>
+            {/* Admin Buttons - Only visible in Korea */}
+            {isKorea && (
+              <>
+                <Link href="/register" className={styles.registerBtn}>
+                    <UserPlus size={16} /> {t.register}
+                </Link>
+                <Link href="/login" className={styles.loginBtn}>
+                    <LogIn size={16} /> {t.login}
+                </Link>
+              </>
+            )}
+
             {/* Language Selector */}
             <div className={styles.langSelector}>
               <button 
@@ -138,18 +150,6 @@ export default function Home() {
                 </div>
               )}
             </div>
-
-            {/* Admin Buttons - Only visible in Korea */}
-            {isKorea && (
-              <>
-                <Link href="/register" className={styles.registerBtn}>
-                    <UserPlus size={16} /> {t.register}
-                </Link>
-                <Link href="/login" className={styles.loginBtn}>
-                    <LogIn size={16} /> {t.login}
-                </Link>
-              </>
-            )}
           </div>
         </div>
       </nav>
