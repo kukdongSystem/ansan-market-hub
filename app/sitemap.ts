@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-
+ 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://ansan-market-hub.vercel.app'
   
@@ -17,9 +17,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/login`,
+      url: `${baseUrl}/map`,
       lastModified: new Date(),
-      changeFrequency: 'monthly',
+      changeFrequency: 'weekly',
       priority: 0.5,
     },
   ]
