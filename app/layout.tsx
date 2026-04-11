@@ -42,6 +42,11 @@ export const metadata: Metadata = {
     title: "안산유통상가 통합 검색 플랫폼 '이거어디?'",
     description: "내 손안의 안산유통상가, 위치와 상점 정보를 한 번에!",
   },
+  verification: {
+    other: {
+      'naver-site-verification': '35e95d4bc94fb8e28b1c6c3e5e0c60c9b2ef4de6',
+    },
+  },
   robots: "index, follow",
 };
 
