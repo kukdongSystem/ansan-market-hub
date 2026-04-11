@@ -172,7 +172,7 @@ export default function Home() {
         <div className={styles.heroContent}>
           <div className={styles.badge}>{t.badge}</div>
           <h1 className={styles.title}>
-            {lang === 'ko' ? '안산유통상가' : ''} <br />
+            {t.heroPrefix} <br />
             <span>
               {t[HERO_IMAGES[currentSlide].titleKey as string]}
             </span>
