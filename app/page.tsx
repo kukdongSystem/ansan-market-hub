@@ -273,7 +273,8 @@ export default function Home() {
               <img src="/images/logo.png" alt="Logo" style={{ height: '28px', width: '28px', objectFit: 'contain', borderRadius: '6px' }} />
               <strong>ANSAN MARKET HUB</strong>
             </div>
-            <p>{t.footerDesc}</p>
+            <p style={{ marginTop: '0.25rem', color: 'rgba(255, 255, 255, 0.4)', fontSize: '0.85rem' }}>{t.address}</p>
+            <p style={{ marginTop: '0.5rem' }}>{t.footerDesc}</p>
           </div>
         </div>
       </footer>
