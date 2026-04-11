@@ -10,29 +10,29 @@ import { translations, Language } from '@/constants/translations';
 
 const HERO_IMAGES = [
   {
-    url: '/images/hydraulics-bg.png', // New professional hydraulics image
+    url: '/images/hydraulics-bg.png',
     titleKey: 'heroTitle',
     descKey: 'heroDesc'
   },
   {
     url: '/images/construction-bg.png',
-    title: '기초를 다지는 건축자재',
-    desc: '시공에 필요한 시멘트부터 파이프, 배관까지 모든 건설의 시작점.'
+    titleKey: 'heroConstructTitle',
+    descKey: 'heroConstructDesc'
   },
   {
     url: '/images/automotive-bg.png',
-    title: '쉬지 않는 원동력, 모터',
-    desc: '핵심 동력 전달 장치와 정밀 유공압 실린더를 한곳에서.'
+    titleKey: 'heroAutoTitle',
+    descKey: 'heroAutoDesc'
   },
   {
     url: '/images/it-bg.png',
-    title: '스마트 비즈니스 파트너',
-    desc: '사무기기 임대와 안정적인 네트워크 통신 구축의 중심.'
+    titleKey: 'heroItTitle',
+    descKey: 'heroItDesc'
   },
   {
     url: '/images/industrial-bg.png',
-    title: '강력한 산업 솔루션',
-    desc: '4,000여 개 전문 매장의 산업 용품과 부품을 한눈에.'
+    titleKey: 'heroIndTitle',
+    descKey: 'heroIndDesc'
   },
 ];
 
@@ -53,7 +53,7 @@ export default function Home() {
   const [country, setCountry] = useState<string | null>(null);
   const router = useRouter();
 
-  const t = translations[lang];
+  const t = translations[lang] as any;
 
   useEffect(() => {
     // 1. Language Detection
@@ -174,15 +174,11 @@ export default function Home() {
           <h1 className={styles.title}>
             {lang === 'ko' ? '안산유통상가' : ''} <br />
             <span>
-              {HERO_IMAGES[currentSlide].titleKey 
-                ? (translations[lang] as any)[HERO_IMAGES[currentSlide].titleKey!]
-                : HERO_IMAGES[currentSlide].title}
+              {t[HERO_IMAGES[currentSlide].titleKey as string]}
             </span>
           </h1>
           <p className={styles.description}>
-            {HERO_IMAGES[currentSlide].descKey 
-              ? (translations[lang] as any)[HERO_IMAGES[currentSlide].descKey!]
-              : HERO_IMAGES[currentSlide].desc}
+            {t[HERO_IMAGES[currentSlide].descKey as string]}
           </p>
           <div className={styles.searchWrapper}>
             <SearchBox 
@@ -212,43 +208,43 @@ export default function Home() {
             <Link href="/search?q=공구" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
               <div className={styles.catIcon}><Hammer size={32}/></div>
               <div className={styles.catContent}>
-                <h3>기계·공구·철물</h3>
-                <p>수공구부터 중장비 부속, 베어링까지 체계적인 분류</p>
+                <h3>{t.catMachineTitle}</h3>
+                <p>{t.catMachineDesc}</p>
               </div>
             </Link>
             <Link href="/search?q=전자" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
               <div className={styles.catIcon}><Zap size={32}/></div>
               <div className={styles.catContent}>
-                <h3>전기·전자·반도체</h3>
-                <p>소형 전자 부품 및 자동화, LS산전 등 전문 대리점 종합</p>
+                <h3>{t.catElectricTitle}</h3>
+                <p>{t.catElectricDesc}</p>
               </div>
             </Link>
             <Link href="/search?q=배관" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
               <div className={styles.catIcon}><Building2 size={32}/></div>
               <div className={styles.catContent}>
-                <h3>건축자재·배관</h3>
-                <p>시공에 필요한 모든 파이프, 목재, 시멘트 및 기초 설비</p>
+                <h3>{t.catPipeTitle}</h3>
+                <p>{t.catPipeDesc}</p>
               </div>
             </Link>
             <Link href="/search?q=유공압" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
               <div className={styles.catIcon}><Cog size={32}/></div>
               <div className={styles.catContent}>
-                <h3>유공압·실린더·모터</h3>
-                <p>동력 전달 장치 핵심 부품, 정밀 유공압 실린더 완벽 구비</p>
+                <h3>{t.catHydroTitle}</h3>
+                <p>{t.catHydroDesc}</p>
               </div>
             </Link>
             <Link href="/search?q=화학" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
               <div className={styles.catIcon}><Beaker size={32}/></div>
               <div className={styles.catContent}>
-                <h3>화학·도료·고무</h3>
-                <p>각종 산업용 화공약품, 페인트, 그리고 맞춤형 고무 패킹</p>
+                <h3>{t.catChemTitle}</h3>
+                <p>{t.catChemDesc}</p>
               </div>
             </Link>
             <Link href="/search?q=포장" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
               <div className={styles.catIcon}><Package size={32}/></div>
               <div className={styles.catContent}>
-                <h3>포장·안전·소모품</h3>
-                <p>보호 장구, 테이프, 박스 등 현장 작업에 필수적인 물품들</p>
+                <h3>{t.catSafeTitle}</h3>
+                <p>{t.catSafeDesc}</p>
               </div>
             </Link>
           </div>
@@ -277,7 +273,7 @@ export default function Home() {
               <img src="/images/logo.png" alt="Logo" style={{ height: '28px', width: '28px', objectFit: 'contain', borderRadius: '6px' }} />
               <strong>ANSAN MARKET HUB</strong>
             </div>
-            <p>© 2026 안산유통상가 입점주를 위한 공식 통합 탐색 서비스. All rights reserved.</p>
+            <p>{t.footerDesc}</p>
           </div>
         </div>
       </footer>
