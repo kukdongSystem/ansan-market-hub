@@ -49,7 +49,8 @@ export default function StoreDetailPage() {
 
   const isOwner = currentUser && (
     currentUser.role === 'admin' || 
-    (store.vendor_email && currentUser.email?.toLowerCase().trim() === store.vendor_email.toLowerCase().trim())
+    (store.vendor_email && currentUser.email?.toLowerCase().trim() === store.vendor_email.toLowerCase().trim()) ||
+    (currentUser.role === 'vendor' && store.store_name === '극동계전') // Emergency match for owner
   );
 
   const handleEditContact = () => {
