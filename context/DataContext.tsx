@@ -78,18 +78,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
             
             // 데이터 보정 로직: ID 혹은 이름으로 매칭하여 최신 정보(이메일 등) 반영
             const updatedStores = parsedStores.map(store => {
-                // 1. ID로 매칭 시도
                 const mockById = MOCK_STORES.find(m => m.id === store.id);
-                // 2. 이름으로 매칭 시도 (특히 '극동계전' 고정 매칭)
                 const mockByName = MOCK_STORES.find(m => m.store_name === store.store_name);
-                
                 const mock = mockById || mockByName;
 
                 if (mock && !store.vendor_email && mock.vendor_email) {
                     return { ...store, vendor_email: mock.vendor_email };
                 }
                 
-                // 극동계전 특별 강제 매칭
                 if (store.store_name.includes('극동계전') && !store.vendor_email) {
                     return { ...store, vendor_email: 'soons28@naver.com' };
                 }
@@ -103,6 +99,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
             console.error("Store data migration failed", e);
         }
     }
+
+    // [추가] 다른 탭에서 발생한 데이터 변경 감지 (실시간 동기화)
+    const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'ansan_stores' && e.newValue) {
+            setStores(JSON.parse(e.newValue));
+        }
+        if (e.key === 'ansan_accounts' && e.newValue) {
+            setAccounts(JSON.parse(e.newValue));
+        }
+        if (e.key === 'ansan_current_user') {
+            setCurrentUserState(e.newValue ? JSON.parse(e.newValue) : null);
+        }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const setCurrentUser = (user: any | null) => {
