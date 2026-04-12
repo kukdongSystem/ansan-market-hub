@@ -29,18 +29,22 @@ export default function LoginPage() {
     setMessage('');
 
     try {
+        // 프로젝트가 휴면 상태일 경우를 대비해 넉넉하게 30초 타임아웃 설정
         const { user, error: signError } = await signInWithPasswordDirect(
           email,
-          password
+          password,
+          30000
         );
+
         if (signError) throw signError;
         if (!user) throw new Error('세션을 가져오지 못했습니다.');
 
         // onAuthStateChange보다 navigation이 먼저 일어나면 /admin이 currentUser=null로 보고 /login으로 튕깁니다.
+        // 이를 방지하기 위해 Context에 수동으로 세션 정보를 주입합니다.
         setCurrentUser({
           id: user.id,
           email: user.email,
-          role: 'vendor',
+          role: 'vendor', // 기본값, 하단 프로필 조회에서 갱신됨
         });
 
         // profiles는 네트워크/RLS 등으로 지연·무응답일 수 있어 로그인 완료를 막지 않음 (백그라운드 반영)
@@ -60,8 +64,13 @@ export default function LoginPage() {
           })
           .catch(() => {});
 
+        // 로그인 성공 시 메시지 표시
         setMessage('로그인 성공! 이동 중...');
-        router.push('/admin');
+        
+        // Context 동기화 및 렌더링 시간을 벌기 위해 아주 약간 지연 후 이동
+        setTimeout(() => {
+          router.push('/admin');
+        }, 500);
     } catch (err: any) {
         let msg = err.message || '로그인에 실패했습니다.';
         if (msg === 'TIMEOUT') msg = '서버 응답이 없습니다. Supabase 프로젝트가 일시 정지 상태일 수 있습니다. 잠시 후 다시 시도하세요.';

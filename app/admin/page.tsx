@@ -52,13 +52,24 @@ export default function AdminDashboard() {
     const router = useRouter();
 
     // Authentication Protection
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
     useEffect(() => {
-        if (!isDataLoading && !currentUser) {
+        // Give it a tiny bit of time to sync the auth state if we just logged in
+        const timer = setTimeout(() => {
+            setIsCheckingAuth(false);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        if (!isDataLoading && !isCheckingAuth && !currentUser) {
             router.push('/login');
         }
-    }, [currentUser, isDataLoading, router]);
+    }, [currentUser, isDataLoading, isCheckingAuth, router]);
 
-    if (isDataLoading) {
+    if (isDataLoading || isCheckingAuth) {
         return (
             <div style={{ 
                 height: '100vh', 
