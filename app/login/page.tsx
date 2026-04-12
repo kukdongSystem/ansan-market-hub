@@ -35,12 +35,16 @@ export default function LoginPage() {
         });
 
         if (error) throw error;
-        
-        // Reset loading state and show success before redirect
-        setIsLoading(false);
-        setMessage('로그인 성공! 관리자 화면으로 이동 중...');
+
+        // 로그인 성공 시 즉시 관리자 페이지로 이동
+        setMessage('로그인 성공! 이동 중...');
+        router.push('/admin');
     } catch (err: any) {
-        setMessage(err.message || '로그인에 실패했습니다.');
+        // 에러 메시지 한국어로 변환
+        let msg = err.message || '로그인에 실패했습니다.';
+        if (msg.includes('Invalid login credentials')) msg = '이메일 또는 비밀번호가 올바르지 않습니다.';
+        if (msg.includes('Email not confirmed')) msg = '이메일 인증이 완료되지 않았습니다. 메일함을 확인하세요.';
+        setMessage(msg);
         setIsLoading(false);
     }
   };
