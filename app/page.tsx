@@ -110,7 +110,10 @@ export default function Home() {
           <div className={styles.wrapper}>
              <Link href="/" className={styles.logo}>
                 <img src="/images/logo.png" alt="Logo" style={{ height: '36px', width: '36px', objectFit: 'contain', marginRight: '0.5rem', borderRadius: '8px' }} />
-                <span className={styles.logoText}>ANSAN MARKET HUB</span>
+                <div className={styles.logoText} style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.1' }}>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#2563eb', letterSpacing: '-0.02em' }}>이거어디?</span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>안산유통상가 1차</span>
+                </div>
              </Link>
           </div>
 
@@ -275,9 +278,12 @@ export default function Home() {
       <footer className={styles.footer}>
         <div className={styles.footerContent}>
           <div className={styles.footerLeft}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <img src="/images/logo.png" alt="Logo" style={{ height: '28px', width: '28px', objectFit: 'contain', borderRadius: '6px' }} />
-              <strong>ANSAN MARKET HUB</strong>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <img src="/images/logo.png" alt="Logo" style={{ height: '36px', width: '36px', objectFit: 'contain', borderRadius: '8px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.1' }}>
+                <strong style={{ color: 'white', fontSize: '1.2rem', margin: 0 }}>이거어디?</strong>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', fontWeight: 500 }}>안산유통상가 1차</span>
+              </div>
             </div>
             <p style={{ marginTop: '0.25rem', color: 'rgba(255, 255, 255, 0.4)', fontSize: '0.85rem' }}>{t.address}</p>
             <p style={{ marginTop: '0.5rem' }}>{t.footerDesc}</p>
