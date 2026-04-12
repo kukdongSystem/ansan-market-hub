@@ -54,9 +54,9 @@
 }
 
 .logoTitle {
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   font-weight: 900;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
   background: linear-gradient(to right, #0ea5e9 0%, #8b5cf6 50%, #0ea5e9 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -64,6 +64,7 @@
   -webkit-text-fill-color: transparent;
   margin-bottom: 0.2rem;
   animation: shine 3s linear infinite;
+  filter: drop-shadow(0 2px 4px rgba(14, 165, 233, 0.4));
 }
 
 @keyframes shine {
@@ -643,8 +644,8 @@
   .langBtn span { display: inline !important; }
   .langBtn { padding: 0.65rem; border-radius: 0.5rem; width: 100%; justify-content: center; }
   .logoImage { height: 32px; width: 32px; }
-  .logoTitle { font-size: 1.15rem; }
-  .logoSubtitle { font-size: 0.75rem; }
+  .logoTitle { font-size: 0.95rem; }
+  .logoSubtitle { font-size: 0.7rem; }
   .btnText { display: inline !important; }
   .registerBtn, .loginBtn { padding: 1rem; border-radius: 0.5rem; width: 100%; justify-content: center; }
   .langDropdown { right: 50%; transform: translateX(50%); width: 100%; text-align: center; }
