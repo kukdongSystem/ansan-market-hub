@@ -40,8 +40,8 @@ export default function LoginPage() {
 
         if (error) throw error;
 
-        // 로그인 성공 시 즉시 관리자 페이지로 이동
         setMessage('로그인 성공! 이동 중...');
+        setIsLoading(false);
         router.push('/admin');
     } catch (err: any) {
         let msg = err.message || '로그인에 실패했습니다.';
