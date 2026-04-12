@@ -32,14 +32,12 @@ export default function VendorDashboard() {
     const [editValues, setEditValues] = useState<Partial<Store>>({});
     const [tempTag, setTempTag] = useState('');
 
-    // Find the store belonging to this vendor
-    // For prototype simplicity, we find store whereRoad address or store name matches or we just find the store created by this vendor email context
-    // Better: find store where location matches or just first store if vendor.
-    // Actually, we'll try to find a store that 'looks like' it belongs to the current user email.
-    const myStore = stores.find(s => s.road_address?.includes(currentUser?.email || 'none') || s.id.startsWith('s_')); // Simplification for prototype
-    // Better: Find the one with highest ID (latest registered)
-    const latestStore = [...stores].sort((a, b) => b.id.localeCompare(a.id))[0];
-    const activeStore = latestStore; // Let's just use the latest one for demo purposes if vendor
+    // Find the store belonging to this vendor by email
+    const myStore = stores.find(s => s.vendor_email === currentUser?.email);
+    
+    // For demo/prototype: if no exact email match, fallback to the latest one (safeguard)
+    const latestStore = [...stores].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))[0];
+    const activeStore = myStore || latestStore; 
 
     useEffect(() => {
         if (!currentUser) {
@@ -197,6 +195,28 @@ export default function VendorDashboard() {
                                                     onChange={(e) => setEditValues({ ...editValues, location: e.target.value })}
                                                 />
                                             ) : <p>{activeStore.location}</p>}
+                                        </div>
+                                        <div className={adminStyles.infoItem}>
+                                            <label>대표 연락처</label>
+                                            {isEditing ? (
+                                                <input
+                                                    className={adminStyles.modalInput}
+                                                    value={editValues.phone || ''}
+                                                    onChange={(e) => setEditValues({ ...editValues, phone: e.target.value })}
+                                                    placeholder="031-000-0000"
+                                                />
+                                            ) : <p>{activeStore.phone || '등록되지 않음'}</p>}
+                                        </div>
+                                        <div className={adminStyles.infoItem}>
+                                            <label>영업 시간</label>
+                                            {isEditing ? (
+                                                <input
+                                                    className={adminStyles.modalInput}
+                                                    value={editValues.operating_hours || ''}
+                                                    onChange={(e) => setEditValues({ ...editValues, operating_hours: e.target.value })}
+                                                    placeholder="예: 평일 09:00 - 18:00 (토요일 휴무)"
+                                                />
+                                            ) : <p>{activeStore.operating_hours || '정보 없음'}</p>}
                                         </div>
                                         <div className={adminStyles.infoItem}>
                                             <label>업종 카테고리</label>

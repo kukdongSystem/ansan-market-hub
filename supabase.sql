@@ -16,6 +16,8 @@ CREATE TABLE stores (
   keywords TEXT[] DEFAULT '{}',
   description TEXT,
   image_url TEXT,
+  phone TEXT,
+  operating_hours TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 

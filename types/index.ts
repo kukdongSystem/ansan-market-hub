@@ -58,6 +58,7 @@ export interface Store {
   description: string | null;
   image_url: string | null;
   phone?: string;
+  operating_hours?: string;
   is_verified?: boolean;
   vendor_email?: string;
   created_at: string;

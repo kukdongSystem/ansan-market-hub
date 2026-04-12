@@ -338,6 +338,28 @@ export default function AdminDashboard() {
                                                 ) : <p>{selectedStore.location}</p>}
                                             </div>
                                             <div className={styles.infoItem}>
+                                                <label>연락처 (전화번호)</label>
+                                                {isEditing ? (
+                                                    <input
+                                                        className={styles.modalInput}
+                                                        value={editValues.phone || ''}
+                                                        onChange={(e) => setEditValues({ ...editValues, phone: e.target.value })}
+                                                        placeholder="031-000-0000"
+                                                    />
+                                                ) : <p>{selectedStore.phone || '등록되지 않음'}</p>}
+                                            </div>
+                                            <div className={styles.infoItem}>
+                                                <label>영업 시간</label>
+                                                {isEditing ? (
+                                                    <input
+                                                        className={styles.modalInput}
+                                                        value={editValues.operating_hours || ''}
+                                                        onChange={(e) => setEditValues({ ...editValues, operating_hours: e.target.value })}
+                                                        placeholder="예: 평일 09:00 - 18:00 (토요일 휴무)"
+                                                    />
+                                                ) : <p>{selectedStore.operating_hours || '정보 없음'}</p>}
+                                            </div>
+                                            <div className={styles.infoItem}>
                                                 <label>업종 카테고리</label>
                                                 {isEditing ? (
                                                     <select
@@ -761,23 +783,22 @@ export default function AdminDashboard() {
                             <div className={styles.accountGrid}>
                                 {accounts.map((acc, idx) => {
                                     let store = stores.find(s => s.vendor_email === acc.email);
-                                    // Prototype Fallback: LocalStorage might have stores created without vendor_email. Map them sequentially.
+                                    
+                                    // If no exact email match, try to find a store with a similar name or just marked orphan
                                     if (!store && acc.role === 'vendor') {
-                                        // 모의 데이터 중 아직 이메일이 연결되지 않은 업체들만 추림
-                                        const unassignedStores = stores.filter(s => !s.vendor_email || !accounts.map(a => a.email).includes(s.vendor_email));
-                                        // 아직 매장이 매칭되지 않은 벤더 계정들 추림
-                                        const unassignedAccounts = accounts.filter(a => a.role === 'vendor' && !stores.find(st => st.vendor_email === a.email));
-                                        const myIndex = unassignedAccounts.indexOf(acc);
-                                        if (myIndex >= 0 && unassignedStores[myIndex]) {
-                                            store = unassignedStores[myIndex];
-                                        }
+                                        // Some stores might have been created without email during proto phase
+                                        // Just show it as disconnected if not found
                                     }
                                     return (
                                         <div key={acc.email} className={styles.accountCard}>
                                             <div className={styles.accountHeader}>
                                                 <div className={styles.accountInfo}>
-                                                    <h4>{store ? store.store_name : acc.role === 'admin' ? '시스템 관리자' : '확인되지 않은 업체'}</h4>
-                                                    <span>{store ? store.location : idx === 0 ? '전체 관리 권한' : '이메일 확인 필요'}</span>
+                                                    <h4 style={!store && acc.role !== 'admin' ? { color: '#ef4444' } : {}}>
+                                                        {store ? store.store_name : acc.role === 'admin' ? '시스템 관리자' : '매장 정보 없음'}
+                                                    </h4>
+                                                    <span style={!store && acc.role !== 'admin' ? { color: '#64748b', fontSize: '0.75rem' } : {}}>
+                                                        {store ? store.location : acc.email}
+                                                    </span>
                                                 </div>
                                                 <div className={`${styles.roleBadge} ${acc.role === 'admin' ? styles.adminMode : ''}`}>
                                                     {acc.role.toUpperCase()}
