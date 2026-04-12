@@ -29,10 +29,14 @@ export default function LoginPage() {
     setMessage('');
 
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+        // 10초 타임아웃 설정
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+        );
+
+        const loginPromise = supabase.auth.signInWithPassword({ email, password });
+
+        const { data, error } = await Promise.race([loginPromise, timeoutPromise]) as any;
 
         if (error) throw error;
 
@@ -40,8 +44,8 @@ export default function LoginPage() {
         setMessage('로그인 성공! 이동 중...');
         router.push('/admin');
     } catch (err: any) {
-        // 에러 메시지 한국어로 변환
         let msg = err.message || '로그인에 실패했습니다.';
+        if (msg === 'TIMEOUT') msg = '서버 응답이 없습니다. Supabase 프로젝트가 일시 정지 상태일 수 있습니다. 잠시 후 다시 시도하세요.';
         if (msg.includes('Invalid login credentials')) msg = '이메일 또는 비밀번호가 올바르지 않습니다.';
         if (msg.includes('Email not confirmed')) msg = '이메일 인증이 완료되지 않았습니다. 메일함을 확인하세요.';
         setMessage(msg);
