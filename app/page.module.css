@@ -610,7 +610,8 @@
   
   .title { font-size: 2rem; margin-bottom: 1rem; }
   .heroContent { padding-top: 1rem; }
-  .hero { padding: 2rem 1rem; min-height: auto; }
+  .hero { padding: 3rem 1rem 5rem 1rem; min-height: auto; }
+  .slideIndicators { bottom: 2rem; }
   .description { font-size: 1rem; margin-bottom: 2rem; }
   .adminShortcut { top: 1rem; right: 1rem; width: 32px; height: 32px; }
   .categoryCard { padding: 1.5rem; }
