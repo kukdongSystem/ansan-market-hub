@@ -8,6 +8,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
-  }
+    // PKCE는 일부 브라우저/환경에서 password 로그인 요청이 끝나지 않는 증상과 함께 보고됨
+    flowType: 'implicit',
+  },
 });

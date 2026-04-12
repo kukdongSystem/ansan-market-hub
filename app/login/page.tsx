@@ -29,14 +29,17 @@ export default function LoginPage() {
     setMessage('');
 
     try {
-        // 10초 타임아웃 설정
+        const timeoutMs = 20000;
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+          setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs)
         );
 
         const loginPromise = supabase.auth.signInWithPassword({ email, password });
 
-        const { data, error } = await Promise.race([loginPromise, timeoutPromise]) as any;
+        const { data, error } = await Promise.race([loginPromise, timeoutPromise]) as {
+          data: { user: { id: string; email?: string | null } | null } | null;
+          error: Error | null;
+        };
 
         if (error) throw error;
 
@@ -49,21 +52,25 @@ export default function LoginPage() {
           email: user.email,
           role: 'vendor',
         });
-        const { data: profile } = await supabase
+
+        // profiles는 네트워크/RLS 등으로 지연·무응답일 수 있어 로그인 완료를 막지 않음 (백그라운드 반영)
+        void supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .maybeSingle();
-        if (profile) {
-          setCurrentUser((prev: any) => ({
-            ...prev,
-            ...profile,
-            role: profile.role || 'vendor',
-          }));
-        }
+          .maybeSingle()
+          .then(({ data: profile }) => {
+            if (profile) {
+              setCurrentUser((prev: any) => ({
+                ...prev,
+                ...profile,
+                role: profile.role || 'vendor',
+              }));
+            }
+          })
+          .catch(() => {});
 
         setMessage('로그인 성공! 이동 중...');
-        setIsLoading(false);
         router.push('/admin');
     } catch (err: any) {
         let msg = err.message || '로그인에 실패했습니다.';
@@ -71,6 +78,7 @@ export default function LoginPage() {
         if (msg.includes('Invalid login credentials')) msg = '이메일 또는 비밀번호가 올바르지 않습니다.';
         if (msg.includes('Email not confirmed')) msg = '이메일 인증이 완료되지 않았습니다. 메일함을 확인하세요.';
         setMessage(msg);
+    } finally {
         setIsLoading(false);
     }
   };
