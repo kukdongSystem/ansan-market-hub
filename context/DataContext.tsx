@@ -24,13 +24,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const getInitialStores = () => {
     if (typeof window === 'undefined') return MOCK_STORES;
     const saved = localStorage.getItem('ansan_stores');
-    return saved ? JSON.parse(saved) : MOCK_STORES;
+    const hasInitialized = localStorage.getItem('ansan_initialized');
+    
+    if (saved) return JSON.parse(saved);
+    if (hasInitialized) return []; // Explicitly empty if already initialized
+    return MOCK_STORES;
   };
 
   const getInitialAccounts = () => {
     if (typeof window === 'undefined') return MOCK_ACCOUNTS;
     const saved = localStorage.getItem('ansan_accounts');
-    return saved ? JSON.parse(saved) : MOCK_ACCOUNTS;
+    const hasInitialized = localStorage.getItem('ansan_initialized');
+    
+    if (saved) return JSON.parse(saved);
+    if (hasInitialized) return []; // Explicitly empty
+    return MOCK_ACCOUNTS;
   };
 
   const [stores, setStores] = useState<Store[]>(getInitialStores);
@@ -42,6 +50,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       localStorage.setItem('ansan_stores', JSON.stringify(stores));
       localStorage.setItem('ansan_accounts', JSON.stringify(accounts));
+      localStorage.setItem('ansan_initialized', 'true');
       if (currentUser) {
         localStorage.setItem('ansan_current_user', JSON.stringify(currentUser));
       } else {

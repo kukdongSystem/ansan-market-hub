@@ -694,7 +694,7 @@ export default function AdminDashboard() {
                                                 <td>{app.created_at ? new Date(app.created_at).toLocaleString() : '방금 전'}</td>
                                                 <td><strong className={styles.tableName}>{app.store_name}</strong></td>
                                                 <td>{app.location}</td>
-                                                <td>계정 연동됨</td>
+                                                <td>{app.vendor_email || '이메일 없음'}</td>
                                                 <td><span className={styles.badgeWarning}>검토 대기</span></td>
                                                 <td>
                                                     <div className={styles.btnRow}>
