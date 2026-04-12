@@ -120,8 +120,8 @@ export default function AdminDashboard() {
         { label: '금일 방문자', value: '1,245', icon: <BarChart3 size={20} />, color: '#8b5cf6' },
     ];
 
-    const filteredStores = stores.filter(s =>
-        s.store_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const filteredStores = (stores || []).filter(s =>
+        (s.store_name || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
         (s.location || '').includes(searchTerm)
     );
 
@@ -258,8 +258,9 @@ export default function AdminDashboard() {
     const handleExcelExport = async () => {
         try {
             const headers = ['매장번호', '매장명', '업종', '위치(동/호)', '도로명주소', '전화번호', '담당자이메일', '가입일시', '키워드'];
-            const rows = stores.map(s => {
-                const displayId = `${new Date(s.created_at || Date.now()).toISOString().split('T')[0].replace(/-/g, '')}-${s.id.replace('s_', '').slice(-4)}`;
+            const rows = (stores || []).map(s => {
+                const storeId = s.id || 'temp';
+                const displayId = `${new Date(s.created_at || Date.now()).toISOString().split('T')[0].replace(/-/g, '')}-${storeId.replace('s_', '').slice(-4)}`;
                 const escapedKeywords = s.keywords ? '"' + s.keywords.join(', ').replace(/"/g, '""') + '"' : '""';
 
                 return [

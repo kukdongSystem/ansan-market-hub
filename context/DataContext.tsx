@@ -53,7 +53,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             .single();
             
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), 5000)
+            setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), 10000)
           );
 
           const { data: profile } = await Promise.race([profilePromise, timeoutPromise]) as any;
