@@ -2,9 +2,10 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 
-import { useState, KeyboardEvent } from 'react';
+import { useState, KeyboardEvent, useEffect } from 'react';
 import { Store, CATEGORY_LABELS, StoreCategory } from '@/types';
 import { useData } from '@/context/DataContext';
+import { useRouter } from 'next/navigation';
 import styles from './admin.module.css';
 import {
     Users,
@@ -36,7 +37,54 @@ import {
 import Link from 'next/link';
 
 export default function AdminDashboard() {
-    const { stores, addStore, updateStore, deleteStore, accounts, updateAccount, deleteAccount, resetAllData } = useData();
+    const { 
+        stores, 
+        addStore, 
+        updateStore, 
+        deleteStore, 
+        accounts, 
+        updateAccount, 
+        deleteAccount, 
+        resetAllData,
+        currentUser,
+        isLoading: isDataLoading
+    } = useData();
+    const router = useRouter();
+
+    // Authentication Protection
+    useEffect(() => {
+        if (!isDataLoading && !currentUser) {
+            router.push('/login');
+        }
+    }, [currentUser, isDataLoading, router]);
+
+    if (isDataLoading) {
+        return (
+            <div style={{ 
+                height: '100vh', 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center', 
+                justifyContent: 'center',
+                background: '#f8fafc',
+                color: '#64748b'
+            }}>
+                <div style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    border: '3px solid #e2e8f0', 
+                    borderTopColor: '#3b82f6', 
+                    borderRadius: '50%', 
+                    animation: 'spin 1s linear infinite',
+                    marginBottom: '1rem'
+                }}></div>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                <p>관리자 세션을 확인 중입니다...</p>
+            </div>
+        );
+    }
+
+    if (!currentUser) return null; // Prevents flash of content while redirecting
     const [activeTab, setActiveTab] = useState<'overview' | 'stores' | 'accounts' | 'approvals' | 'settings'>('overview');
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -587,9 +635,17 @@ export default function AdminDashboard() {
                 </nav>
 
                 <div className={styles.sidebarFooter}>
-                    <Link href="/" className={styles.logoutBtn}>
+                    <button 
+                        onClick={async () => {
+                            if (confirm('정말로 로그아웃 하시겠습니까?')) {
+                                await resetAllData();
+                            }
+                        }} 
+                        className={styles.logoutBtn}
+                        style={{ width: '100%', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem' }}
+                    >
                         <LogOut size={18} /> 서비스 종료
-                    </Link>
+                    </button>
                 </div>
             </aside>
 
@@ -606,10 +662,12 @@ export default function AdminDashboard() {
                     </div>
                     <div className={styles.adminProfile}>
                         <div className={styles.profileText}>
-                            <span className={styles.profileName}>최고관리자</span>
-                            <span className={styles.profileRole}>Admin Root</span>
+                            <span className={styles.profileName}>{currentUser?.store_name || currentUser?.email || '사용자'}</span>
+                            <span className={styles.profileRole}>{currentUser?.role === 'admin' ? '시스템 관리자' : '입점사 관리'}</span>
                         </div>
-                        <div className={styles.avatar}>A</div>
+                        <div className={styles.avatar}>
+                            {currentUser?.email?.[0].toUpperCase() || 'U'}
+                        </div>
                     </div>
                 </header>
 

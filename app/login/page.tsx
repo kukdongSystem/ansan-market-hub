@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Home, ArrowLeft } from 'lucide-react';
 import styles from './login.module.css';
@@ -9,13 +9,19 @@ import { supabase } from '@/lib/supabase';
 import { useData } from '@/context/DataContext';
 
 export default function LoginPage() {
-  const { accounts, setCurrentUser } = useData();
+  const { currentUser, isLoading: isDataLoading } = useData();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    if (!isDataLoading && currentUser) {
+      router.replace('/admin');
+    }
+  }, [currentUser, isDataLoading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,9 +36,9 @@ export default function LoginPage() {
 
         if (error) throw error;
         
-        // Navigation is handled by DataContext's onAuthStateChange
-        // but we can accelerate it here if we want.
-        // The router will push based on the role fetched in DataContext.
+        // Reset loading state and show success before redirect
+        setIsLoading(false);
+        setMessage('로그인 성공! 관리자 화면으로 이동 중...');
     } catch (err: any) {
         setMessage(err.message || '로그인에 실패했습니다.');
         setIsLoading(false);

@@ -26,46 +26,46 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   // Sync with Supabase Auth
   useEffect(() => {
-    const initAuth = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-            // Fetch profile data
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-            
-            setCurrentUser({
-                id: session.user.id,
-                email: session.user.email,
-                role: profile?.role || 'vendor',
-                ...profile
-            });
-        }
-    };
-
-    initAuth();
-
+    // onAuthStateChange handles both initial session and subsequent changes.
+    // 'INITIAL_SESSION' event will trigger on subscribe if a session exists.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth Event:", event);
+      
       if (session?.user) {
-        const { data: profile } = await supabase
+        // Optimistic update for minimal session info to avoid Auth Guard kick-outs
+        setCurrentUser(prev => prev && prev.id === session.user.id ? prev : {
+            id: session.user.id,
+            email: session.user.email,
+            role: 'vendor'
+        });
+
+        setIsAuthLoading(true);
+        try {
+          const { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
-        setCurrentUser({
-            id: session.user.id,
-            email: session.user.email,
-            role: profile?.role || 'vendor',
-            ...profile
-        });
+          if (profile) {
+            setCurrentUser(prev => ({
+                ...prev,
+                ...profile,
+                role: profile.role || 'vendor'
+            }));
+          }
+        } catch (err) {
+          console.error("Profile fetch error:", err);
+        } finally {
+          setIsAuthLoading(false);
+        }
       } else {
         setCurrentUser(null);
+        setIsAuthLoading(false);
       }
     });
 
@@ -181,7 +181,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         currentUser, 
         setCurrentUser,
         resetAllData,
-        isLoading
+        isLoading: isLoading || isAuthLoading
     }}>
       {children}
     </DataContext.Provider>
