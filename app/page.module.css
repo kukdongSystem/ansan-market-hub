@@ -49,6 +49,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center; /* Center the two lines relative to each other */
   line-height: 1;
 }
 
@@ -56,11 +57,19 @@
   font-size: 1.4rem;
   font-weight: 900;
   letter-spacing: -0.04em;
-  background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+  background: linear-gradient(to right, #0ea5e9 0%, #8b5cf6 50%, #0ea5e9 100%);
+  background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 0.2rem;
+  animation: shine 3s linear infinite;
+}
+
+@keyframes shine {
+  to {
+    background-position: 200% center;
+  }
 }
 
 .logoSubtitle {

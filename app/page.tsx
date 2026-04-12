@@ -111,7 +111,7 @@ export default function Home() {
              <Link href="/" className={styles.logo}>
                 <img src="/images/logo.png" alt="Logo" className={styles.logoImage} />
                 <div className={styles.logoTextContainer}>
-                  <span className={styles.logoTitle}>이거어디?</span>
+                  <span className={styles.logoTitle}>이거 어디?</span>
                   <span className={styles.logoSubtitle}>안산유통상가 1차</span>
                 </div>
              </Link>
@@ -280,8 +280,8 @@ export default function Home() {
           <div className={styles.footerLeft}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
               <img src="/images/logo.png" alt="Logo" style={{ height: '36px', width: '36px', objectFit: 'contain', borderRadius: '8px' }} />
-              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.1' }}>
-                <strong style={{ color: 'white', fontSize: '1.2rem', margin: 0 }}>이거어디?</strong>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.1' }}>
+                <strong style={{ color: 'white', fontSize: '1.2rem', margin: 0 }}>이거 어디?</strong>
                 <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', fontWeight: 500 }}>안산유통상가 1차</span>
               </div>
             </div>
