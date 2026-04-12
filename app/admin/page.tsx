@@ -51,19 +51,6 @@ export default function AdminDashboard() {
     } = useData();
     const router = useRouter();
 
-    const [activeTab, setActiveTab] = useState<'overview' | 'stores' | 'accounts' | 'approvals' | 'settings'>('overview');
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editValues, setEditValues] = useState<Partial<Store>>({});
-
-    const [editingAccount, setEditingAccount] = useState<any | null>(null);
-    const [accountEditValues, setAccountEditValues] = useState<any>({});
-    const [showPassword, setShowPassword] = useState(false);
-
-    const [tempTag, setTempTag] = useState('');
-
     // Authentication Protection
     useEffect(() => {
         if (!isDataLoading && !currentUser) {
@@ -97,7 +84,21 @@ export default function AdminDashboard() {
         );
     }
 
-    if (!currentUser) return null;
+    if (!currentUser) return null; // Prevents flash of content while redirecting
+    const [activeTab, setActiveTab] = useState<'overview' | 'stores' | 'accounts' | 'approvals' | 'settings'>('overview');
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValues, setEditValues] = useState<Partial<Store>>({});
+
+    // Account Edit State
+    const [editingAccount, setEditingAccount] = useState<any | null>(null);
+    const [accountEditValues, setAccountEditValues] = useState<any>({});
+    const [showPassword, setShowPassword] = useState(false);
+
+    // Tag Input Local State
+    const [tempTag, setTempTag] = useState('');
 
     const pendingApprovals = stores.filter(s => !s.is_verified);
 

@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useData } from '@/context/DataContext';
 
 export default function LoginPage() {
-  const { currentUser, isLoading: isDataLoading } = useData();
+  const { currentUser, isLoading: isDataLoading, setCurrentUser } = useData();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -39,6 +39,28 @@ export default function LoginPage() {
         const { data, error } = await Promise.race([loginPromise, timeoutPromise]) as any;
 
         if (error) throw error;
+
+        const user = data?.user;
+        if (!user) throw new Error('세션을 가져오지 못했습니다.');
+
+        // onAuthStateChange보다 navigation이 먼저 일어나면 /admin이 currentUser=null로 보고 /login으로 튕깁니다.
+        setCurrentUser({
+          id: user.id,
+          email: user.email,
+          role: 'vendor',
+        });
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (profile) {
+          setCurrentUser((prev: any) => ({
+            ...prev,
+            ...profile,
+            role: profile.role || 'vendor',
+          }));
+        }
 
         setMessage('로그인 성공! 이동 중...');
         setIsLoading(false);
