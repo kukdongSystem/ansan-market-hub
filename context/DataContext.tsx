@@ -59,7 +59,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           const { data: profile } = await Promise.race([profilePromise, timeoutPromise]) as any;
 
           if (profile) {
-            setCurrentUser(prev => ({
+            setCurrentUser((prev: any) => ({
                 ...prev,
                 ...profile,
                 role: profile.role || 'vendor'
