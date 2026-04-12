@@ -562,8 +562,8 @@
   .navContent { padding: 0 0.5rem; }
   .langBtn span { display: none; }
   .langBtn { padding: 0.65rem; border-radius: 0.5rem; }
-  .logoText { display: none; }
-  .logo img { height: 30px !important; width: 30px !important; margin: 0 !important; }
+  .logoText { display: block; font-size: 0.8rem; font-weight: 700; max-width: 120px; white-space: pre-wrap; line-height: 1.1; }
+  .logo img { height: 28px !important; width: 28px !important; margin-right: 0.25rem !important; }
   .btnText { display: none; }
   .registerBtn, .loginBtn { padding: 0.65rem; border-radius: 0.5rem; }
   .navLinks { gap: 0.5rem; }
