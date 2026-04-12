@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, MapPin, Building2, UserPlus, Briefcase } from 'lucide-react';
 import { CATEGORY_LABELS, StoreCategory } from '@/types';
+import { supabase } from '@/lib/supabase';
 import { useData } from '@/context/DataContext';
 import styles from '../login/login.module.css';
 
@@ -53,36 +54,45 @@ export default function RegisterPage() {
     }
     
     setIsLoading(true);
-    
-    // Simulate API call and save to Context
-    setTimeout(() => {
-      const newId = `s_${Date.now()}`;
-      
-      // 1. Create shop entry (Unverified)
-      addStore({
-        id: newId,
-        store_name: formData.storeName,
-        category: formData.category as StoreCategory,
-        location: `${formData.dong} ${formData.ho}`,
-        road_address: currentAddress,
-        keywords: [formData.storeName, CATEGORY_LABELS[formData.category as StoreCategory]],
-        description: `${formData.storeName}입니다. 신규 신청된 매장입니다.`,
-        image_url: null,
-        is_verified: false,
-        vendor_email: formData.email, // Link store to account email correctly
-        created_at: new Date().toISOString()
-      });
 
-      // 2. Create login account
-      addAccount({
-        email: formData.email,
-        password: formData.password,
-        role: 'vendor'
-      });
+    try {
+        // 1. Sign up user
+        const { data, error: signUpError } = await supabase.auth.signUp({
+            email: formData.email,
+            password: formData.password,
+        });
 
-      setIsLoading(false);
-      setIsSuccess(true);
-    }, 1500);
+        if (signUpError) throw signUpError;
+        if (!data.user) throw new Error('회원가입에 실패했습니다.');
+
+        // 2. Create Profile
+        const { error: profileError } = await supabase.from('profiles').insert([{
+            id: data.user.id,
+            role: 'vendor',
+            unit_info: `${formData.dong} ${formData.ho}`
+        }]);
+        if (profileError) throw profileError;
+
+        // 3. Create Store
+        const { error: storeError } = await supabase.from('stores').insert([{
+            vendor_id: data.user.id,
+            store_name: formData.storeName,
+            category: formData.category as StoreCategory,
+            location: `${formData.dong} ${formData.ho}`,
+            road_address: currentAddress,
+            keywords: [formData.storeName, CATEGORY_LABELS[formData.category as StoreCategory]],
+            description: `${formData.storeName}입니다. 신규 신청된 매장입니다.`,
+            is_verified: false
+        }]);
+        if (storeError) throw storeError;
+
+        setIsSuccess(true);
+    } catch (err: any) {
+        console.error("Registration error:", err);
+        alert(err.message || '등록 중 오류가 발생했습니다.');
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   if (isSuccess) {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Home, ArrowLeft } from 'lucide-react';
 import styles from './login.module.css';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 import { useData } from '@/context/DataContext';
 
 export default function LoginPage() {
@@ -21,22 +22,21 @@ export default function LoginPage() {
     setIsLoading(true);
     setMessage('');
 
-    // Check against live accounts from context
-    setTimeout(() => {
-      const account = accounts.find(acc => acc.email === email && acc.password === password);
-      
-      if (account) {
-        setCurrentUser(account);
-        if (account.role === 'admin') {
-          router.push('/admin');
-        } else {
-          router.push('/vendor');
-        }
-      } else {
-        setMessage('아이디 또는 비밀번호가 틀렸습니다.');
-      }
-      setIsLoading(false);
-    }, 1000);
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) throw error;
+        
+        // Navigation is handled by DataContext's onAuthStateChange
+        // but we can accelerate it here if we want.
+        // The router will push based on the role fetched in DataContext.
+    } catch (err: any) {
+        setMessage(err.message || '로그인에 실패했습니다.');
+        setIsLoading(false);
+    }
   };
 
   return (

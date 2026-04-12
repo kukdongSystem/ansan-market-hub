@@ -1,181 +1,171 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Store, MOCK_STORES, MOCK_ACCOUNTS } from '@/types';
+import { Store, MOCK_STORES } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 interface DataContextType {
   stores: Store[];
   accounts: any[];
-  addStore: (store: Store) => void;
-  updateStore: (id: string, updates: Partial<Store>) => void;
-  deleteStore: (id: string) => void;
-  addAccount: (account: any) => void;
+  addStore: (store: Store) => Promise<void>;
+  updateStore: (id: string, updates: Partial<Store>) => Promise<void>;
+  deleteStore: (id: string) => Promise<void>;
+  addAccount: (account: any) => Promise<void>;
   currentUser: any | null;
   setCurrentUser: (user: any | null) => void;
-  updateAccount: (email: string, updates: any) => void;
-  deleteAccount: (email: string) => void;
-  resetAllData: () => void;
+  updateAccount: (email: string, updates: any) => Promise<void>;
+  deleteAccount: (email: string) => Promise<void>;
+  resetAllData: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  // Direct initialization from localStorage to prevent "flash" of old data
-  const getInitialStores = () => {
-    if (typeof window === 'undefined') return MOCK_STORES;
-    const saved = localStorage.getItem('ansan_stores');
-    const hasInitialized = localStorage.getItem('ansan_initialized');
-    
-    if (saved) return JSON.parse(saved);
-    if (hasInitialized) return []; // Explicitly empty if already initialized
-    return MOCK_STORES;
-  };
+  const [stores, setStores] = useState<Store[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const getInitialAccounts = () => {
-    if (typeof window === 'undefined') return MOCK_ACCOUNTS;
-    const saved = localStorage.getItem('ansan_accounts');
-    const hasInitialized = localStorage.getItem('ansan_initialized');
-    
-    if (saved) return JSON.parse(saved);
-    if (hasInitialized) return []; // Explicitly empty
-    return MOCK_ACCOUNTS;
-  };
-
-  const [stores, setStores] = useState<Store[]>(getInitialStores);
-  const [accounts, setAccounts] = useState<any[]>(getInitialAccounts);
-  const [currentUser, setCurrentUserState] = useState<any | null>(null);
-
-  // Sync state to LocalStorage whenever it changes
+  // Sync with Supabase Auth
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ansan_stores', JSON.stringify(stores));
-      localStorage.setItem('ansan_accounts', JSON.stringify(accounts));
-      localStorage.setItem('ansan_initialized', 'true');
-      if (currentUser) {
-        localStorage.setItem('ansan_current_user', JSON.stringify(currentUser));
-      } else {
-        localStorage.removeItem('ansan_current_user');
-      }
-    }
-  }, [stores, accounts, currentUser]);
-
-  // Load current user on mount (client side only)
-  useEffect(() => {
-    const savedUser = localStorage.getItem('ansan_current_user');
-    const savedStores = localStorage.getItem('ansan_stores');
-    
-    if (savedUser) {
-        try {
-            setCurrentUserState(JSON.parse(savedUser));
-        } catch(e) {
-            console.error("Auth init failed", e);
-        }
-    }
-
-    if (savedStores) {
-        try {
-            let parsedStores: Store[] = JSON.parse(savedStores);
+    const initAuth = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+            // Fetch profile data
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
             
-            // 데이터 보정 로직: ID 혹은 이름으로 매칭하여 최신 정보(이메일 등) 반영
-            const updatedStores = parsedStores.map(store => {
-                const mockById = MOCK_STORES.find(m => m.id === store.id);
-                const mockByName = MOCK_STORES.find(m => m.store_name === store.store_name);
-                const mock = mockById || mockByName;
-
-                if (mock && !store.vendor_email && mock.vendor_email) {
-                    return { ...store, vendor_email: mock.vendor_email };
-                }
-                
-                if (store.store_name.includes('극동계전') && !store.vendor_email) {
-                    return { ...store, vendor_email: 'soons28@naver.com' };
-                }
-
-                return store;
+            setCurrentUser({
+                id: session.user.id,
+                email: session.user.email,
+                role: profile?.role || 'vendor',
+                ...profile
             });
-
-            setStores(updatedStores);
-            localStorage.setItem('ansan_stores', JSON.stringify(updatedStores));
-        } catch(e) {
-            console.error("Store data migration failed", e);
-        }
-    }
-
-    // [추가] 다른 탭에서 발생한 데이터 변경 감지 (실시간 동기화)
-    const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === 'ansan_stores' && e.newValue) {
-            setStores(JSON.parse(e.newValue));
-        }
-        if (e.key === 'ansan_accounts' && e.newValue) {
-            setAccounts(JSON.parse(e.newValue));
-        }
-        if (e.key === 'ansan_current_user') {
-            setCurrentUserState(e.newValue ? JSON.parse(e.newValue) : null);
         }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+        setCurrentUser({
+            id: session.user.id,
+            email: session.user.email,
+            role: profile?.role || 'vendor',
+            ...profile
+        });
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const setCurrentUser = (user: any | null) => {
-    setCurrentUserState(user);
-  };
-
-  const addStore = (store: Store) => {
-    setStores(prev => {
-        const updated = [store, ...prev];
-        if (typeof window !== 'undefined') localStorage.setItem('ansan_stores', JSON.stringify(updated));
-        return updated;
-    });
-  };
-
-  const updateStore = (id: string, updates: Partial<Store>) => {
-    setStores(prev => {
-        const updated = prev.map(s => s.id === id ? { ...s, ...updates } : s);
-        if (typeof window !== 'undefined') localStorage.setItem('ansan_stores', JSON.stringify(updated));
-        return updated;
-    });
-  };
-
-  const deleteStore = (id: string) => {
-    setStores(prev => {
-        const updated = prev.filter(s => s.id !== id);
-        if (typeof window !== 'undefined') localStorage.setItem('ansan_stores', JSON.stringify(updated));
-        return updated;
-    });
-  };
-
-  const addAccount = (account: any) => {
-    setAccounts(prev => {
-        const updated = [...prev, account];
-        if (typeof window !== 'undefined') localStorage.setItem('ansan_accounts', JSON.stringify(updated));
-        return updated;
-    });
-  };
-
-  const updateAccount = (email: string, updates: any) => {
-    setAccounts(prev => {
-        const updated = prev.map(acc => acc.email === email ? { ...acc, ...updates } : acc);
-        if (typeof window !== 'undefined') localStorage.setItem('ansan_accounts', JSON.stringify(updated));
-        return updated;
-    });
-  };
-
-  const deleteAccount = (email: string) => {
-    setAccounts(prev => {
-        const updated = prev.filter(a => a.email !== email);
-        if (typeof window !== 'undefined') localStorage.setItem('ansan_accounts', JSON.stringify(updated));
-        return updated;
-    });
-  };
-
-  const resetAllData = () => {
-    if (typeof window !== 'undefined') {
-        localStorage.removeItem('ansan_stores');
-        localStorage.removeItem('ansan_accounts');
-        localStorage.removeItem('ansan_current_user');
-        window.location.href = '/admin'; // Force full restart to clear state
+  // Fetch initial stores from Supabase
+  const fetchStores = async () => {
+    setIsLoading(true);
+    try {
+        const { data, error } = await supabase
+            .from('stores')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        // Map database fields to UI component fields if necessary
+        const mappedStores = (data || []).map(s => ({
+            ...s,
+            // Ensure any nulls are handled
+            keywords: s.keywords || [],
+            is_verified: s.is_verified ?? true // Default to true if missing in DB for now
+        }));
+        
+        setStores(mappedStores);
+    } catch (err) {
+        console.error("Failed to fetch stores:", err);
+        // Fallback to MOCK_STORES if DB is empty or fails (optional)
+        if (stores.length === 0) setStores(MOCK_STORES);
+    } finally {
+        setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchStores();
+  }, []);
+
+  const addStore = async (store: Store) => {
+    try {
+        const { error } = await supabase.from('stores').insert([{
+            ...store,
+            vendor_id: currentUser?.id // Link to current user
+        }]);
+        if (error) throw error;
+        await fetchStores(); // Refresh
+    } catch (err) {
+        console.error("Add store failed:", err);
+        // Optimistic local update
+        setStores(prev => [store, ...prev]);
+    }
+  };
+
+  const updateStore = async (id: string, updates: Partial<Store>) => {
+    try {
+        const { error } = await supabase
+            .from('stores')
+            .update(updates)
+            .eq('id', id);
+        if (error) throw error;
+        await fetchStores();
+    } catch (err) {
+        console.error("Update store failed:", err);
+        setStores(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+    }
+  };
+
+  const deleteStore = async (id: string) => {
+    try {
+        const { error } = await supabase
+            .from('stores')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        await fetchStores();
+    } catch (err) {
+        console.error("Delete store failed:", err);
+        setStores(prev => prev.filter(s => s.id !== id));
+    }
+  };
+
+  const addAccount = async (account: any) => {
+    // This usually happens through supabase.auth.signUp
+    setAccounts(prev => [...prev, account]);
+  };
+
+  const updateAccount = async (email: string, updates: any) => {
+    // Update profile in DB
+    setAccounts(prev => prev.map(acc => acc.email === email ? { ...acc, ...updates } : acc));
+  };
+
+  const deleteAccount = async (email: string) => {
+    setAccounts(prev => prev.filter(a => a.email !== email));
+  };
+
+  const resetAllData = async () => {
+    // Resetting DB data is dangerous, so just clear local and logout
+    await supabase.auth.signOut();
+    window.location.href = '/';
   };
 
   return (
@@ -190,7 +180,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         deleteAccount, 
         currentUser, 
         setCurrentUser,
-        resetAllData
+        resetAllData,
+        isLoading
     }}>
       {children}
     </DataContext.Provider>
