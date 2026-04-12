@@ -199,6 +199,17 @@ export default function VendorDashboard() {
                                       ) : <p>{activeStore.location}</p>}
                                   </div>
                                   <div className={adminStyles.infoItem}>
+                                      <label>연락처</label>
+                                      {isEditing ? (
+                                          <input 
+                                            className={adminStyles.modalInput} 
+                                            placeholder="예: 031-123-4567"
+                                            value={editValues.phone || ''} 
+                                            onChange={(e) => setEditValues({...editValues, phone: e.target.value})}
+                                          />
+                                      ) : <p>{activeStore.phone || '연락처 미등록'}</p>}
+                                  </div>
+                                  <div className={adminStyles.infoItem}>
                                       <label>업종 카테고리</label>
                                       {isEditing ? (
                                           <select 

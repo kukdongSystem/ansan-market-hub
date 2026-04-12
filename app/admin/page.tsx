@@ -338,6 +338,17 @@ export default function AdminDashboard() {
                                           ) : <p>{selectedStore.location}</p>}
                                       </div>
                                       <div className={styles.infoItem}>
+                                          <label>연락처</label>
+                                          {isEditing ? (
+                                              <input 
+                                                className={styles.modalInput} 
+                                                placeholder="예: 031-123-4567"
+                                                value={editValues.phone || ''} 
+                                                onChange={(e) => setEditValues({...editValues, phone: e.target.value})}
+                                              />
+                                          ) : <p>{selectedStore.phone || '연락처 미등록'}</p>}
+                                      </div>
+                                      <div className={styles.infoItem}>
                                           <label>업종 카테고리</label>
                                           {isEditing ? (
                                               <select 
