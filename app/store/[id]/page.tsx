@@ -17,19 +17,25 @@ import {
   Navigation,
   AlertTriangle,
   X,
-  MessageSquare
+  MessageSquare,
+  Edit2,
+  Check
 } from 'lucide-react';
 import Link from 'next/link';
 import styles from './store.module.css';
 
 export default function StoreDetailPage() {
-  const { stores } = useData();
+  const { stores, currentUser, updateStore } = useData();
   const { id } = useParams();
   const router = useRouter();
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportContent, setReportContent] = useState('');
   const [reportSent, setReportSent] = useState(false);
   
+  const [isEditingContact, setIsEditingContact] = useState(false);
+  const [editPhone, setEditPhone] = useState('');
+  const [editHours, setEditHours] = useState('');
+
   const store = stores.find(s => s.id === id);
 
   if (!store) {
@@ -40,6 +46,19 @@ export default function StoreDetailPage() {
       </div>
     );
   }
+
+  const isOwner = currentUser && (currentUser.email === store.vendor_email || currentUser.role === 'admin');
+
+  const handleEditContact = () => {
+    setEditPhone(store.phone || '');
+    setEditHours(store.operating_hours || '');
+    setIsEditingContact(true);
+  };
+
+  const handleSaveContact = () => {
+    updateStore(store.id, { phone: editPhone, operating_hours: editHours });
+    setIsEditingContact(false);
+  };
 
   const handleReportSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,21 +160,60 @@ export default function StoreDetailPage() {
             </section>
 
             <section className={styles.infoCard}>
-                <h3>📞 연락처 및 영업정보</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h3 style={{ margin: 0 }}>📞 연락처 및 영업정보</h3>
+                    {isOwner && !isEditingContact && (
+                        <button onClick={handleEditContact} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.85rem' }}>
+                            <Edit2 size={14} /> 수정
+                        </button>
+                    )}
+                    {isOwner && isEditingContact && (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button onClick={handleSaveContact} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: '#3b82f6', color: 'white', border: 'none', padding: '0.35rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                <Check size={14} /> 저장
+                            </button>
+                            <button onClick={() => setIsEditingContact(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: '#e2e8f0', color: '#475569', border: 'none', padding: '0.35rem 0.6rem', borderRadius: '0.25rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                <X size={14} /> 취소
+                            </button>
+                        </div>
+                    )}
+                </div>
                 <div className={styles.infoList}>
                     <div className={styles.infoItem}>
                         <Phone size={20} />
-                        <div>
+                        <div style={{ width: '100%' }}>
                             <strong>대표번호</strong>
-                            <p>{store.phone || '등록된 번호가 없습니다.'}</p>
+                            {isEditingContact ? (
+                                <input 
+                                    className={styles.inlineInput}
+                                    placeholder="예: 031-123-4567"
+                                    value={editPhone}
+                                    onChange={(e) => setEditPhone(e.target.value)}
+                                    style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', fontSize: '0.9rem', outline: 'none' }}
+                                />
+                            ) : (
+                                <p>{store.phone || '등록된 번호가 없습니다.'}</p>
+                            )}
                         </div>
                     </div>
                     <div className={styles.infoItem}>
                         <Clock size={20} />
-                        <div>
+                        <div style={{ width: '100%' }}>
                             <strong>영업시간</strong>
-                            <p>평일 09:00 - 18:00 (토요일 15:00까지)</p>
-                            <span>※ 공휴일 및 일요일 휴무</span>
+                            {isEditingContact ? (
+                                <input 
+                                    className={styles.inlineInput}
+                                    placeholder="예: 평일 09:00 ~ 18:00"
+                                    value={editHours}
+                                    onChange={(e) => setEditHours(e.target.value)}
+                                    style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', fontSize: '0.9rem', outline: 'none' }}
+                                />
+                            ) : (
+                                <>
+                                    <p>{store.operating_hours || '상세 정보 없음'}</p>
+                                    {!store.operating_hours && <span>※ 상가 기본 영업시간은 평일 09:00 - 18:00 입니다.</span>}
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

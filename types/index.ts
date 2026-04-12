@@ -8,7 +8,7 @@ export interface Profile {
   created_at: string;
 }
 
-export type StoreCategory = 
+export type StoreCategory =
   | 'fastener'     // 볼트, 너트, 체결류
   | 'tool'         // 공구, 전동공구, 수공구
   | 'bearing'      // 베어링, 동력전달장치
