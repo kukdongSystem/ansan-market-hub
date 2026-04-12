@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Image as ImageIcon, Loader2, UploadCloud } from 'lucide-react';
 import styles from './SearchBox.module.css';
@@ -8,14 +8,24 @@ import styles from './SearchBox.module.css';
 interface SearchBoxProps {
   initialValue?: string;
   placeholder?: string;
+  placeholders?: string[];
 }
 
-export default function SearchBox({ initialValue = '', placeholder = '어떤 매장을 찾으시나요?' }: SearchBoxProps) {
+export default function SearchBox({ initialValue = '', placeholder, placeholders }: SearchBoxProps) {
   const [query, setQuery] = useState(initialValue);
   const [isScanning, setIsScanning] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!placeholders || placeholders.length <= 1) return;
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [placeholders]);
 
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -78,7 +88,7 @@ export default function SearchBox({ initialValue = '', placeholder = '어떤 매
           type="text" 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={isScanning ? '이미지를 분석하고 있습니다...' : placeholder} 
+          placeholder={isScanning ? '이미지를 분석하고 있습니다...' : (placeholders ? placeholders[placeholderIndex] : placeholder || '어떤 매장을 찾으시나요?')} 
           className={styles.input}
           disabled={isScanning}
         />

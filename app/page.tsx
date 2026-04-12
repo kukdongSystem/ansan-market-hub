@@ -183,6 +183,7 @@ export default function Home() {
           <div className={styles.searchWrapper}>
             <SearchBox 
               placeholder={t.searchPlaceholder} 
+              placeholders={[t.searchPlaceholder, t.searchPlaceholderAlt]}
             />
           </div>
         </div>
