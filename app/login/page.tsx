@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Home, ArrowLeft } from 'lucide-react';
 import styles from './login.module.css';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { supabase, signInWithPasswordDirect } from '@/lib/supabase';
 import { useData } from '@/context/DataContext';
 
 export default function LoginPage() {
@@ -29,21 +29,11 @@ export default function LoginPage() {
     setMessage('');
 
     try {
-        const timeoutMs = 20000;
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs)
+        const { user, error: signError } = await signInWithPasswordDirect(
+          email,
+          password
         );
-
-        const loginPromise = supabase.auth.signInWithPassword({ email, password });
-
-        const { data, error } = await Promise.race([loginPromise, timeoutPromise]) as {
-          data: { user: { id: string; email?: string | null } | null } | null;
-          error: Error | null;
-        };
-
-        if (error) throw error;
-
-        const user = data?.user;
+        if (signError) throw signError;
         if (!user) throw new Error('세션을 가져오지 못했습니다.');
 
         // onAuthStateChange보다 navigation이 먼저 일어나면 /admin이 currentUser=null로 보고 /login으로 튕깁니다.
