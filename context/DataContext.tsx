@@ -80,29 +80,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch initial stores from Supabase
+  // Fetch initial stores from Supabase with timeout
   const fetchStores = async () => {
     setIsLoading(true);
     try {
-        const { data, error } = await supabase
+        const storePromise = supabase
             .from('stores')
             .select('*')
             .order('created_at', { ascending: false });
+            
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('STORES_FETCH_TIMEOUT')), 5000)
+        );
+
+        const { data, error } = await Promise.race([storePromise, timeoutPromise]) as any;
         
         if (error) throw error;
         
-        // Map database fields to UI component fields if necessary
-        const mappedStores = (data || []).map(s => ({
+        const mappedStores = (data || []).map((s: any) => ({
             ...s,
-            // Ensure any nulls are handled
             keywords: s.keywords || [],
-            is_verified: s.is_verified ?? true // Default to true if missing in DB for now
+            is_verified: s.is_verified ?? true
         }));
         
         setStores(mappedStores);
     } catch (err) {
-        console.error("Failed to fetch stores:", err);
-        // Fallback to MOCK_STORES if DB is empty or fails (optional)
+        console.error("Failed to fetch stores or timeout:", err);
+        // Fallback to MOCK_STORES if DB fetch fails or times out
         if (stores.length === 0) setStores(MOCK_STORES);
     } finally {
         setIsLoading(false);
@@ -111,6 +115,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchStores();
+
+    // Emergency loading canceler: if after 10s it's still loading, force it off.
+    const timer = setTimeout(() => {
+        setIsLoading(false);
+        setIsAuthLoading(false);
+        console.warn("Emergency loading cancel triggered after 10s.");
+    }, 10000);
+    return () => clearTimeout(timer);
   }, []);
 
   const addStore = async (store: Store) => {
