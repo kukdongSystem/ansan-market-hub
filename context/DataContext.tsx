@@ -53,11 +53,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Load current user on mount (client side only)
   useEffect(() => {
     const savedUser = localStorage.getItem('ansan_current_user');
+    const savedStores = localStorage.getItem('ansan_stores');
+    
     if (savedUser) {
         try {
             setCurrentUserState(JSON.parse(savedUser));
         } catch(e) {
             console.error("Auth init failed", e);
+        }
+    }
+
+    if (savedStores) {
+        try {
+            let parsedStores: Store[] = JSON.parse(savedStores);
+            
+            // 데이터 보정 로직: MOCK_STORES의 최신 정보를 반영 (이메일 등)
+            const updatedStores = parsedStores.map(store => {
+                const mock = MOCK_STORES.find(m => m.id === store.id);
+                if (mock && !store.vendor_email && mock.vendor_email) {
+                    return { ...store, vendor_email: mock.vendor_email };
+                }
+                return store;
+            });
+
+            setStores(updatedStores);
+            localStorage.setItem('ansan_stores', JSON.stringify(updatedStores));
+        } catch(e) {
+            console.error("Store data migration failed", e);
         }
     }
   }, []);
