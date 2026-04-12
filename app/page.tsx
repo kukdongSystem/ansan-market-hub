@@ -109,10 +109,10 @@ export default function Home() {
         <div className={styles.navContent}>
           <div className={styles.wrapper}>
              <Link href="/" className={styles.logo}>
-                <img src="/images/logo.png" alt="Logo" style={{ height: '36px', width: '36px', objectFit: 'contain', marginRight: '0.5rem', borderRadius: '8px' }} />
-                <div className={styles.logoText} style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.1' }}>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#2563eb', letterSpacing: '-0.02em' }}>이거어디?</span>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>안산유통상가 1차</span>
+                <img src="/images/logo.png" alt="Logo" className={styles.logoImage} />
+                <div className={styles.logoTextContainer}>
+                  <span className={styles.logoTitle}>이거어디?</span>
+                  <span className={styles.logoSubtitle}>안산유통상가 1차</span>
                 </div>
              </Link>
           </div>
