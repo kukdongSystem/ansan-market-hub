@@ -48,12 +48,14 @@ export default function LoginPage() {
         });
 
         // profiles는 네트워크/RLS 등으로 지연·무응답일 수 있어 로그인 완료를 막지 않음 (백그라운드 반영)
-        void supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle()
-          .then(({ data: profile }) => {
+        const fetchProfile = async () => {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', user.id)
+              .maybeSingle();
+            
             if (profile) {
               setCurrentUser((prev: any) => ({
                 ...prev,
@@ -61,8 +63,11 @@ export default function LoginPage() {
                 role: profile.role || 'vendor',
               }));
             }
-          })
-          .catch(() => {});
+          } catch (e) {
+            console.error("Profile fetch background failed:", e);
+          }
+        };
+        void fetchProfile();
 
         // 로그인 성공 시 메시지 표시
         setMessage('로그인 성공! 이동 중...');

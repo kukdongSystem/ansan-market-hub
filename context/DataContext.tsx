@@ -45,11 +45,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
         setIsAuthLoading(true);
         try {
-          const { data: profile } = await supabase
+          // 5초 타임아웃 적용하여 프로필 조회가 늦어져도 로그인은 진행되도록 개선
+          const profilePromise = supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
+            
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), 5000)
+          );
+
+          const { data: profile } = await Promise.race([profilePromise, timeoutPromise]) as any;
 
           if (profile) {
             setCurrentUser(prev => ({
@@ -59,7 +66,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }));
           }
         } catch (err) {
-          console.error("Profile fetch error:", err);
+          console.error("Profile fetch error or timeout:", err);
+          // 타임아웃이나 에러가 발생해도 currentUser 기본 정보는 이미 설정되어 있으므로 계속 진행
         } finally {
           setIsAuthLoading(false);
         }
