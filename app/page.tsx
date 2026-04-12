@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './page.module.css';
-import { Hammer, Zap, ShieldCheck, Utensils, UploadCloud, UserPlus, LogIn, Settings, Package, Cog, Building2, Beaker, Monitor, Globe, ChevronDown } from 'lucide-react';
+import { Hammer, Zap, ShieldCheck, Utensils, UploadCloud, UserPlus, LogIn, Settings, Package, Cog, Building2, Beaker, Monitor, Globe, ChevronDown, Menu, X } from 'lucide-react';
 import SearchBox from '@/components/SearchBox';
 import { translations, Language } from '@/constants/translations';
 
@@ -50,6 +50,7 @@ export default function Home() {
   const [isPageDragging, setIsPageDragging] = useState(false);
   const [lang, setLang] = useState<Language>('ko');
   const [isLanOpen, setIsLanOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [country, setCountry] = useState<string | null>(null);
   const router = useRouter();
 
@@ -112,8 +113,12 @@ export default function Home() {
                 <span className={styles.logoText}>ANSAN MARKET HUB</span>
              </Link>
           </div>
+
+          <button className={styles.mobileMenuBtn} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+          </button>
           
-          <div className={styles.navLinks}>
+          <div className={`${styles.navLinks} ${isMobileMenuOpen ? styles.navLinksOpen : ''}`}>
             {/* Admin Buttons - Only visible in Korea */}
             {isKorea && (
               <>

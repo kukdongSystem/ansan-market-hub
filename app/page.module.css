@@ -44,6 +44,16 @@
   gap: 1.25rem;
 }
 
+.mobileMenuBtn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #0f172a;
+  cursor: pointer;
+  padding: 0.5rem;
+  z-index: 200;
+}
+
 .navLink {
   font-weight: 600;
   color: #475569;
@@ -560,13 +570,43 @@
 
 @media (max-width: 600px) {
   .navContent { padding: 0 0.5rem; }
-  .langBtn span { display: none; }
-  .langBtn { padding: 0.65rem; border-radius: 0.5rem; }
+  
+  .mobileMenuBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .navLinks {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    flex-direction: column;
+    padding: 80px 2rem 2rem 2rem;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .navLinksOpen {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .langBtn span { display: inline !important; }
+  .langBtn { padding: 0.65rem; border-radius: 0.5rem; width: 100%; justify-content: center; }
   .logoText { display: block; font-size: 0.8rem; font-weight: 700; max-width: 120px; white-space: pre-wrap; line-height: 1.1; }
   .logo img { height: 28px !important; width: 28px !important; margin-right: 0.25rem !important; }
-  .btnText { display: none; }
-  .registerBtn, .loginBtn { padding: 0.65rem; border-radius: 0.5rem; }
-  .navLinks { gap: 0.5rem; }
+  .btnText { display: inline !important; }
+  .registerBtn, .loginBtn { padding: 1rem; border-radius: 0.5rem; width: 100%; justify-content: center; }
+  .langDropdown { right: 50%; transform: translateX(50%); width: 100%; text-align: center; }
+  .langDropdown button { text-align: center; }
   
   .title { font-size: 2rem; margin-bottom: 1rem; }
   .heroContent { padding-top: 1rem; }
