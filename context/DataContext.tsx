@@ -67,12 +67,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
         try {
             let parsedStores: Store[] = JSON.parse(savedStores);
             
-            // 데이터 보정 로직: MOCK_STORES의 최신 정보를 반영 (이메일 등)
+            // 데이터 보정 로직: ID 혹은 이름으로 매칭하여 최신 정보(이메일 등) 반영
             const updatedStores = parsedStores.map(store => {
-                const mock = MOCK_STORES.find(m => m.id === store.id);
+                // 1. ID로 매칭 시도
+                const mockById = MOCK_STORES.find(m => m.id === store.id);
+                // 2. 이름으로 매칭 시도 (특히 '극동계전' 고정 매칭)
+                const mockByName = MOCK_STORES.find(m => m.store_name === store.store_name);
+                
+                const mock = mockById || mockByName;
+
                 if (mock && !store.vendor_email && mock.vendor_email) {
                     return { ...store, vendor_email: mock.vendor_email };
                 }
+                
+                // 극동계전 특별 강제 매칭
+                if (store.store_name.includes('극동계전') && !store.vendor_email) {
+                    return { ...store, vendor_email: 'soons28@naver.com' };
+                }
+
                 return store;
             });
 
