@@ -109,7 +109,7 @@ export default function Home() {
           <div className={styles.wrapper}>
              <Link href="/" className={styles.logo}>
                 <img src="/images/logo.png" alt="Logo" style={{ height: '36px', width: '36px', objectFit: 'contain', marginRight: '0.5rem', borderRadius: '8px' }} />
-                ANSAN MARKET HUB
+                <span className={styles.logoText}>ANSAN MARKET HUB</span>
              </Link>
           </div>
           
@@ -118,10 +118,10 @@ export default function Home() {
             {isKorea && (
               <>
                 <Link href="/register" className={styles.registerBtn}>
-                    <UserPlus size={16} /> {t.register}
+                    <UserPlus size={16} /> <span className={styles.btnText}>{t.register}</span>
                 </Link>
                 <Link href="/login" className={styles.loginBtn}>
-                    <LogIn size={16} /> {t.login}
+                    <LogIn size={16} /> <span className={styles.btnText}>{t.login}</span>
                 </Link>
               </>
             )}

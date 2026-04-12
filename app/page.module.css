@@ -2,6 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 /* Nav */
@@ -553,9 +554,23 @@
   font-weight: 700 !important;
 }
 
+.btnText { display: inline; }
+
 @media (max-width: 600px) {
-  .navContent { padding: 0 1rem; }
+  .navContent { padding: 0 0.5rem; }
   .langBtn span { display: none; }
-  .langBtn { padding: 0.65rem; }
-  .logo { font-size: 1.1rem; }
+  .langBtn { padding: 0.65rem; border-radius: 0.5rem; }
+  .logoText { display: none; }
+  .logo img { height: 30px !important; width: 30px !important; margin: 0 !important; }
+  .btnText { display: none; }
+  .registerBtn, .loginBtn { padding: 0.65rem; border-radius: 0.5rem; }
+  .navLinks { gap: 0.5rem; }
+  
+  .title { font-size: 2rem; margin-bottom: 1rem; }
+  .heroContent { padding-top: 1rem; }
+  .hero { padding: 2rem 1rem; min-height: auto; }
+  .description { font-size: 1rem; margin-bottom: 2rem; }
+  .adminShortcut { top: 1rem; right: 1rem; width: 32px; height: 32px; }
+  .categoryCard { padding: 1.5rem; }
+  .catIcon { width: 56px; height: 56px; }
 }
