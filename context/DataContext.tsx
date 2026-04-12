@@ -80,6 +80,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const seedDatabase = async () => {
+    try {
+        console.log("Seeding database with sample stores...");
+        // id를 제외한 데이터만 추출하여 insert (DB에서 자동 생성하거나 겹치지 않게 처리)
+        const seedData = MOCK_STORES.map(({ id, ...rest }) => ({
+            ...rest,
+            vendor_id: currentUser?.id || '5f6e9ec5-18cf-4f62-9e6d-f3cce0d4a02a'
+        }));
+        
+        const { error } = await supabase.from('stores').insert(seedData);
+        if (error) throw error;
+        console.log("Database seeded successfully!");
+        await fetchStores(); // Refresh after seeding
+    } catch (err) {
+        console.error("Failed to seed database:", err);
+    }
+  };
+
   // Fetch initial stores from Supabase with timeout
   const fetchStores = async () => {
     setIsLoading(true);
@@ -97,16 +115,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
         
         if (error) throw error;
         
-        const mappedStores = (data || []).map((s: any) => ({
+        const dbStores = data || [];
+        
+        // 데이터가 아예 없는 경우 (최초 실행 시) 자동 데이터 주입 시도
+        if (dbStores.length === 0 && currentUser?.role === 'admin') {
+            await seedDatabase();
+            return;
+        }
+
+        const mappedStores = dbStores.map((s: any) => ({
             ...s,
             keywords: s.keywords || [],
             is_verified: s.is_verified ?? true
         }));
         
-        setStores(mappedStores);
+        setStores(mappedStores.length > 0 ? mappedStores : MOCK_STORES);
     } catch (err) {
         console.error("Failed to fetch stores or timeout:", err);
-        // Fallback to MOCK_STORES if DB fetch fails or times out
         if (stores.length === 0) setStores(MOCK_STORES);
     } finally {
         setIsLoading(false);
