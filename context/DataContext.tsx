@@ -37,7 +37,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       if (session?.user) {
         // Optimistic update for minimal session info to avoid Auth Guard kick-outs
-        setCurrentUser(prev => prev && prev.id === session.user.id ? prev : {
+        setCurrentUser((prev: any) => prev && prev.id === session.user.id ? prev : {
             id: session.user.id,
             email: session.user.email,
             role: 'vendor'
