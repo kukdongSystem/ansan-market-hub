@@ -67,45 +67,51 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const addStore = (store: Store) => {
-    setStores(prev => [store, ...prev]);
+    setStores(prev => {
+        const updated = [store, ...prev];
+        if (typeof window !== 'undefined') localStorage.setItem('ansan_stores', JSON.stringify(updated));
+        return updated;
+    });
   };
 
   const updateStore = (id: string, updates: Partial<Store>) => {
-    setStores(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+    setStores(prev => {
+        const updated = prev.map(s => s.id === id ? { ...s, ...updates } : s);
+        if (typeof window !== 'undefined') localStorage.setItem('ansan_stores', JSON.stringify(updated));
+        return updated;
+    });
   };
 
   const deleteStore = (id: string) => {
-    console.log("DataContext: Deterministic delete store", id);
-    if (typeof window !== 'undefined') {
-        const updated = stores.filter(s => s.id !== id);
-        localStorage.setItem('ansan_stores', JSON.stringify(updated));
-        setStores(updated);
-    }
+    setStores(prev => {
+        const updated = prev.filter(s => s.id !== id);
+        if (typeof window !== 'undefined') localStorage.setItem('ansan_stores', JSON.stringify(updated));
+        return updated;
+    });
   };
 
   const addAccount = (account: any) => {
-    setAccounts(prev => [...prev, account]);
+    setAccounts(prev => {
+        const updated = [...prev, account];
+        if (typeof window !== 'undefined') localStorage.setItem('ansan_accounts', JSON.stringify(updated));
+        return updated;
+    });
   };
 
   const updateAccount = (email: string, updates: any) => {
-    setAccounts(prev => prev.map(acc => acc.email === email ? { ...acc, ...updates } : acc));
+    setAccounts(prev => {
+        const updated = prev.map(acc => acc.email === email ? { ...acc, ...updates } : acc);
+        if (typeof window !== 'undefined') localStorage.setItem('ansan_accounts', JSON.stringify(updated));
+        return updated;
+    });
   };
 
   const deleteAccount = (email: string) => {
-    console.log("DataContext: Deterministic delete account", email);
-    if (typeof window !== 'undefined') {
-        // 1. Get MOST RECENT data from state to ensure no stale data
-        const updated = accounts.filter(a => a.email !== email);
-        
-        // 2. IMMEDIATE Synchronous save to disk
-        localStorage.setItem('ansan_accounts', JSON.stringify(updated));
-        
-        // 3. Update state for React
-        setAccounts(updated);
-        
-        // 4. Hard navigation to /admin to force context reload from the fresh disk data
-        window.location.href = '/admin';
-    }
+    setAccounts(prev => {
+        const updated = prev.filter(a => a.email !== email);
+        if (typeof window !== 'undefined') localStorage.setItem('ansan_accounts', JSON.stringify(updated));
+        return updated;
+    });
   };
 
   const resetAllData = () => {
