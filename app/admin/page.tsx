@@ -675,10 +675,10 @@ export default function AdminDashboard() {
                     <div className={styles.adminProfile}>
                         <div className={styles.profileText}>
                             <span className={styles.profileName}>{currentUser?.store_name || currentUser?.email || '사용자'}</span>
-                            <span className={styles.profileRole}>{currentUser?.role === 'admin' ? '시스템 관리자' : '입점사 관리'}</span>
+                            <span className={styles.profileRole}>{(currentUser as any)?.role === 'admin' ? '시스템 관리자' : '입점사 관리'}</span>
                         </div>
                         <div className={styles.avatar}>
-                            {currentUser?.email?.[0].toUpperCase() || 'U'}
+                            {String(currentUser?.email || 'U')[0].toUpperCase()}
                         </div>
                     </div>
                 </header>
