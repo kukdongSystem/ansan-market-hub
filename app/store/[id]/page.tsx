@@ -47,7 +47,10 @@ export default function StoreDetailPage() {
     );
   }
 
-  const isOwner = currentUser && (currentUser.email === store.vendor_email || currentUser.role === 'admin');
+  const isOwner = currentUser && (
+    currentUser.role === 'admin' || 
+    (store.vendor_email && currentUser.email?.toLowerCase().trim() === store.vendor_email.toLowerCase().trim())
+  );
 
   const handleEditContact = () => {
     setEditPhone(store.phone || '');
@@ -161,7 +164,10 @@ export default function StoreDetailPage() {
 
             <section className={styles.infoCard}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: 0 }}>📞 연락처 및 영업정보</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <h3 style={{ margin: 0 }}>📞 연락처 및 영업정보</h3>
+                        {isOwner && <span style={{ background: '#dcfce7', color: '#166534', fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '4px', fontWeight: 'bold' }}>관리 모드</span>}
+                    </div>
                     {isOwner && !isEditingContact && (
                         <button onClick={handleEditContact} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.85rem' }}>
                             <Edit2 size={14} /> 수정
