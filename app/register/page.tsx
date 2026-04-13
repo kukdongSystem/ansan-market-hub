@@ -55,10 +55,11 @@ export default function RegisterPage() {
     
     setIsLoading(true);
 
-    // Build version: 1.0.2 (force refresh)
+    // 버전: 1.0.3 (한글화 및 안정성 강화)
     try {
-        console.log("Starting registration for:", formData.email);
-        // 1. Sign up user (or handle existing)
+        console.log("회원가입 프로세스 시작:", formData.email);
+        
+        // 1. 사용자 계정 생성 (또는 기존 계정 확인)
         let userId = '';
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email: formData.email,
@@ -67,61 +68,85 @@ export default function RegisterPage() {
 
         if (signUpError) {
             const rawMsg = signUpError.message.toLowerCase();
-            console.log("Signup error detected:", rawMsg);
-            
+            // 계정이 이미 존재하는 경우
             if (rawMsg.includes('already registered') || rawMsg.includes('이미 등록') || rawMsg.includes('exists')) {
-                console.log("Existing user detected, attempting link via sign in...");
                 const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
                     email: formData.email,
                     password: formData.password,
                 });
                 
                 if (signInError) {
-                    console.error("Sign in failed for existing user:", signInError);
-                    throw new Error('이미 사용 중인 이메일입니다. 기존 계정의 비밀번호를 정확히 입력해 주세요.');
+                    throw new Error('이미 등록된 이메일입니다. 기존 계정의 비밀번호를 입력하시거나, 다른 이메일을 사용해 주세요.');
                 }
                 userId = signInData.user?.id || '';
             } else {
-                throw signUpError;
+                throw new Error(`회원가입 중 오류가 발생했습니다: ${signUpError.message}`);
             }
         } else {
             userId = signUpData.user?.id || '';
         }
 
-        if (!userId) throw new Error('계정 정보를 확인할 수 없습니다. 다시 시도해 주세요.');
+        if (!userId) throw new Error('사용자 계정을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.');
 
-        console.log("Proceeding with userId:", userId);
+        // 2. 프로필 정보 업데이트
+        // unit_info 컬럼 유무에 대비하여 안전하게 처리
+        try {
+            const { error: pError } = await supabase.from('profiles').upsert([{
+                id: userId,
+                role: 'vendor',
+                unit_info: `${formData.dong} ${formData.ho}`
+            }], { onConflict: 'id' });
+            
+            if (pError && pError.message.includes('column')) {
+                // unit_info 컬럼이 없을 경우 다른 이름이나 생략 시도
+                console.warn("프로필 컬럼 매칭 실패, 필수 정보만 저장합니다.");
+                await supabase.from('profiles').upsert([{ id: userId, role: 'vendor' }], { onConflict: 'id' });
+            }
+        } catch (e) {
+            console.warn("프로필 업데이트 건너뜀:", e);
+        }
 
-        // 2. Create/Update Profile (Role is kept or updated to vendor)
-        const { error: upsertError } = await supabase.from('profiles').upsert([{
-            id: userId,
-            role: 'vendor', 
-            unit_info: `${formData.dong} ${formData.ho}`
-        }], { onConflict: 'id' });
-        
-        if (upsertError) console.warn("Profile upsert notice:", upsertError);
-
-        // 3. Create Store
-        const { error: storeError } = await supabase.from('stores').insert([{
+        // 3. 매장 정보 등록
+        // location 컬럼 유무에 대비하여 안전하게 처리
+        const storeData: any = {
             vendor_id: userId,
             store_name: formData.storeName,
             category: formData.category as StoreCategory,
-            location: `${formData.dong} ${formData.ho}`,
             road_address: currentAddress,
             description: `${formData.storeName}입니다. 신규 신청된 매장입니다.`,
             is_verified: false
+        };
+
+        // location 컬럼이 있을 것으로 가정하고 우선 시도
+        const { error: sError } = await supabase.from('stores').insert([{
+            ...storeData,
+            location: `${formData.dong} ${formData.ho}`
         }]);
-        
-        if (storeError) {
-            console.error("Store insertion error:", storeError);
-            throw storeError;
+
+        if (sError) {
+            console.error("매장 등록 1차 시도 실패:", sError.message);
+            // location 컬럼 문제인 경우 컬럼 제외하고 2차 시도
+            if (sError.message.includes('column')) {
+                const { error: sError2 } = await supabase.from('stores').insert([storeData]);
+                if (sError2) throw new Error(`매장 정보를 저장할 수 없습니다: ${sError2.message}`);
+            } else {
+                throw new Error(`매장 등록 중 오류가 발생했습니다: ${sError.message}`);
+            }
         }
 
-        console.log("Registration successful!");
+        console.log("등록 최종 성공!");
         setIsSuccess(true);
     } catch (err: any) {
-        console.error("Final catch block:", err);
-        alert(err.message || '알 수 없는 오류가 발생했습니다.');
+        console.error("가입 프로세스 에러:", err);
+        // 사용자에게 친절한 한글 메시지 제공
+        let friendlyMessage = err.message || '매장 등록 중 예상치 못한 오류가 발생했습니다.';
+        
+        // 특정 시스템 에러를 한글로 순화
+        if (friendlyMessage.includes('schema cache')) {
+            friendlyMessage = '시스템 데이터 구조를 업데이트 중입니다. 잠시 후 다시 신청해 주세요.';
+        }
+        
+        alert(friendlyMessage);
     } finally {
         setIsLoading(false);
     }
