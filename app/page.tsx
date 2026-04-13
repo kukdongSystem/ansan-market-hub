@@ -132,16 +132,6 @@ export default function Home() {
             <Settings size={18} />
         </Link>
         
-        {/* Dynamic Prism Engine: Changes colors per slide */}
-        <div className={styles.prismContainer} style={{ 
-          '--prism-color-1': currentSlide === 0 ? '#0ea5e9' : currentSlide === 1 ? '#f59e0b' : currentSlide === 2 ? '#ec4899' : currentSlide === 3 ? '#10b981' : '#6366f1',
-          '--prism-color-2': currentSlide === 0 ? '#6366f1' : currentSlide === 1 ? '#ef4444' : currentSlide === 2 ? '#8b5cf6' : currentSlide === 3 ? '#3b82f6' : '#ec4899'
-        } as any}>
-          <div className={styles.meshGradient}></div>
-          <div className={`${styles.decoration} ${styles.decoration1}`}></div>
-          <div className={`${styles.decoration} ${styles.decoration2}`}></div>
-        </div>
-
         {HERO_IMAGES.map((image, index) => (
           <div 
             key={index}
@@ -158,8 +148,9 @@ export default function Home() {
             <div className={styles.heroContent} style={{ opacity: index === currentSlide ? 1 : 0, pointerEvents: index === currentSlide ? 'auto' : 'none' }}>
               <div className={styles.badge}>{t.badge}</div>
               <h1 className={styles.title}>
+                {t.heroPrefix}
+                <br />
                 <span className={styles.titleHighlight}>
-                  {t.heroPrefix} <br />
                   {t[image.titleKey as string]}
                 </span>
               </h1>

@@ -138,33 +138,6 @@
   overflow: hidden;
 }
 
-/* Stunning Prism Mesh Background */
-.prismContainer {
-  position: absolute;
-  inset: -10%;
-  z-index: -1; /* 가장 뒤로 보내 가독성 방해 금지 */
-  pointer-events: none;
-  transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.meshGradient {
-  position: absolute;
-  inset: -20%;
-  background: 
-    radial-gradient(at 20% 30%, var(--prism-color-1, rgba(56, 189, 248, 0.3)) 0px, transparent 60%),
-    radial-gradient(at 80% 20%, var(--prism-color-2, rgba(129, 140, 248, 0.25)) 0px, transparent 60%),
-    radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.05) 0px, transparent 70%);
-  filter: blur(120px);
-  animation: prismMove 12s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
-  mix-blend-mode: color-dodge; /* Screen보다 덜 번지도록 변경 */
-  opacity: 0.35; /* 대폭 낮춤 */
-}
-
-@keyframes prismMove {
-  0% { transform: scale(1) rotate(0deg) translate(0%, 0%); }
-  50% { transform: scale(1.4) rotate(8deg) translate(8%, -8%); }
-  100% { transform: scale(1.1) rotate(-8deg) translate(-8%, 8%); }
-}
 
 .heroSlide {
   position: absolute;
@@ -184,7 +157,7 @@
   background-size: cover;
   background-position: center;
   transition: transform 40s linear;
-  filter: brightness(0.6) contrast(1.1) saturate(1.1);
+  filter: brightness(0.9) contrast(1.05); /* Sharper, brighter background */
   z-index: 0;
 }
 
@@ -200,7 +173,7 @@
   position: absolute;
   inset: 0;
   /* 가독성 집중: 중앙 암부 농도를 강화하여 텍스트 돌출 유도 */
-  background: radial-gradient(circle at 50% 50%, rgba(2, 6, 23, 0.55) 0%, rgba(2, 6, 23, 0.9) 75%, #020617 100%);
+  background: radial-gradient(circle at 50% 50%, rgba(2, 6, 23, 0.25) 0%, rgba(2, 6, 23, 0.6) 100%); /* Lighter, clearer overlay */
   z-index: 1;
 }
 
@@ -243,32 +216,6 @@
   }
 }
 
-.decoration {
-  position: absolute;
-  pointer-events: none;
-  z-index: 5;
-  background: linear-gradient(135deg, var(--prism-color-1), var(--prism-color-2));
-  filter: blur(60px);
-  border-radius: 50%;
-  opacity: 0.25;
-}
-
-.decoration1 {
-  top: 10%;
-  left: -5%;
-  width: 500px;
-  height: 500px;
-  animation: floatingPrism 15s infinite alternate ease-in-out;
-}
-
-.decoration2 {
-  bottom: -5%;
-  right: -5%;
-  width: 600px;
-  height: 600px;
-  background: linear-gradient(135deg, var(--prism-color-2), var(--prism-color-1));
-  animation: floatingPrism 18s infinite alternate-reverse ease-in-out;
-}
 
 .badge {
   display: inline-flex;
@@ -298,9 +245,7 @@
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   /* 더 짙고 좁은 그림자로 선명한 외곽선 확보 */
-  text-shadow: 
-    0 4px 15px rgba(0, 0, 0, 0.95),
-    0 10px 40px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Cleaner, lighter shadow */
   z-index: 2;
 }
 
@@ -309,11 +254,11 @@
   /* Liquid Silk Gem: Soft blending with diffused pearlescent center */
   background: linear-gradient(
     135deg, 
-    #00fbff 0%, 
-    #7000ff 30%, 
-    #ffffff 50%, /* Broad diffused inner glow (not a 'bone') */
-    #ff00d4 70%,
-    #00fbff 100%
+    #7dd3fc 0%, 
+    #a5b4fc 40%, 
+    #ffffff 50%, 
+    #f472b6 60%,
+    #7dd3fc 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -325,9 +270,7 @@
   -webkit-font-smoothing: antialiased;
   /* Remove sharp stroke that looked like bones, use soft outer glow instead */
   -webkit-text-stroke: 0;
-  filter: 
-    drop-shadow(0 0 10px rgba(56, 189, 248, 0.4))
-    drop-shadow(0 0 20px rgba(129, 140, 248, 0.2));
+  /* Removed drop-shadow filters that caused smudging */
 }
 
 @keyframes crystalShimmer {
@@ -375,38 +318,6 @@
     0 0 40px rgba(56, 189, 248, 0.2);
 }
 
-.decoration {
-  position: absolute;
-  pointer-events: none;
-  z-index: 5;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(129, 140, 248, 0.4));
-  filter: blur(50px);
-  border-radius: 50%;
-  opacity: 0.3;
-}
-
-.decoration1 {
-  top: 10%;
-  left: -5%;
-  width: 400px;
-  height: 400px;
-  animation: floatingPrism 18s infinite alternate ease-in-out;
-}
-
-.decoration2 {
-  bottom: 0%;
-  right: -5%;
-  width: 500px;
-  height: 500px;
-  background: linear-gradient(135deg, rgba(244, 114, 182, 0.3), rgba(139, 92, 246, 0.3));
-  animation: floatingPrism 22s infinite alternate-reverse ease-in-out;
-}
-
-@keyframes floatingPrism {
-  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  50% { transform: translate(10%, 15%) scale(1.2) rotate(45deg); }
-  100% { transform: translate(-5%, -10%) scale(0.9) rotate(-45deg); }
-}
 
 .visitorBadge {
   display: inline-flex;
