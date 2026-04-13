@@ -91,7 +91,22 @@ export default function RegisterPage() {
         setIsSuccess(true);
     } catch (err: any) {
         console.error("Registration error:", err);
-        alert(err.message || '등록 중 오류가 발생했습니다.');
+        
+        // 에러 메시지 한글 번역
+        let errorMessage = '등록 중 오류가 발생했습니다.';
+        const rawMessage = err.message || '';
+
+        if (rawMessage.includes('User already registered')) {
+            errorMessage = '이미 등록된 이메일 주소입니다. 로그인을 시도하거나 다른 이메일을 사용해 주세요.';
+        } else if (rawMessage.includes('Password should be at least 6 characters')) {
+            errorMessage = '비밀번호는 최소 6자 이상이어야 합니다.';
+        } else if (rawMessage.includes('Invalid email')) {
+            errorMessage = '유효하지 않은 이메일 형식입니다.';
+        } else {
+            errorMessage = rawMessage || errorMessage;
+        }
+
+        alert(errorMessage);
     } finally {
         setIsLoading(false);
     }

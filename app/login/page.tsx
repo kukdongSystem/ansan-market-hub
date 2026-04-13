@@ -64,9 +64,17 @@ export default function LoginPage() {
         }, 500);
     } catch (err: any) {
         let msg = err.message || '로그인에 실패했습니다.';
-        if (msg === 'TIMEOUT') msg = '서버 응답이 없습니다. Supabase 프로젝트가 일시 정지 상태일 수 있습니다. 잠시 후 다시 시도하세요.';
-        if (msg.includes('Invalid login credentials')) msg = '이메일 또는 비밀번호가 올바르지 않습니다.';
-        if (msg.includes('Email not confirmed')) msg = '이메일 인증이 완료되지 않았습니다. 메일함을 확인하세요.';
+        if (msg === 'TIMEOUT') {
+             msg = '서버 응답이 없습니다. Supabase 프로젝트가 일시 정지 상태일 수 있습니다. 잠시 후 다시 시도하세요.';
+        } else if (msg.includes('Invalid login credentials')) {
+             msg = '이메일 또는 비밀번호가 올바르지 않습니다.';
+        } else if (msg.includes('Email not confirmed')) {
+             msg = '이메일 인증이 완료되지 않았습니다. 메일함을 확인해 주세요.';
+        } else if (msg.includes('User not found')) {
+             msg = '가입되지 않은 이메일입니다.';
+        } else {
+             msg = msg || '네트워크 오류가 발생했습니다.';
+        }
         setMessage(msg);
     } finally {
         setIsLoading(false);
