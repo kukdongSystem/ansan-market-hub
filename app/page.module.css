@@ -306,27 +306,27 @@
 
 .titleHighlight {
   display: inline-block;
-  /* Premium Liquid Gradient: Cyan -> Indigo -> WHITE FLASH -> Purple -> Pink -> Cyan */
+  /* Elegant & Deep Gradient: Ocean Blue -> Lavender -> Soft Shine -> Rose -> Purple */
   background: linear-gradient(
     to right, 
-    #00f2ff 0%, 
-    #3b82f6 20%, 
-    #ffffff 30%, /* Inner Electric Flash */
-    #3b82f6 40%,
-    #7000ff 60%, 
-    #ff00f2 80%, 
-    #00f2ff 100%
+    #60a5fa 0%, 
+    #818cf8 25%, 
+    #ffffff 50%, /* Soft Pearlescent Shine */
+    #f472b6 75%,
+    #60a5fa 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  /* Faster animation for visible 'flow' */
-  animation: colorfulGradient 4s linear infinite;
+  /* Slower, more subtle animation (10s) */
+  animation: colorfulGradient 10s linear infinite;
   position: relative;
   -webkit-font-smoothing: antialiased;
-  /* Crisp outer glow */
-  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.4));
+  /* Thin elegant stroke for definition */
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
+  /* Gentle glow */
+  filter: drop-shadow(0 0 15px rgba(129, 140, 248, 0.25));
 }
 
 @keyframes colorfulGradient {
