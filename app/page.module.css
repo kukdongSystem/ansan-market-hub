@@ -306,29 +306,35 @@
 
 .titleHighlight {
   display: inline-block;
-  /* Fixed Gradient: No 'sliding' background */
+  /* Crystal Aurora: Ultra-bright center with neon edges */
   background: linear-gradient(
-    to right, 
-    #60a5fa 0%, 
-    #818cf8 35%, 
-    #ffffff 50%, /* Static shine position */
-    #f472b6 65%,
-    #c084fc 100%
+    135deg, 
+    #ffffff 0%, 
+    #00fbff 25%, 
+    #ff00d4 50%, 
+    #00ffa2 75%,
+    #ffffff 100%
   );
+  background-size: 300% 300%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  /* Shift colors in place using hue-rotate for an 'ethereal' feel */
-  animation: staticColorShift 8s ease-in-out infinite;
+  /* Very slow 'drifting shimmer' - not a sweep, but a slow internal change */
+  animation: crystalShimmer 12s ease infinite;
   position: relative;
   -webkit-font-smoothing: antialiased;
-  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
-  filter: drop-shadow(0 0 15px rgba(129, 140, 248, 0.25));
+  /* Subtle white stroke to keep it crisp */
+  -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.4);
+  /* Multi-layered neon glow for 'eye-catching' depth */
+  filter: 
+    drop-shadow(0 0 8px rgba(0, 251, 255, 0.4))
+    drop-shadow(0 0 15px rgba(255, 0, 212, 0.2));
 }
 
-@keyframes staticColorShift {
-  0%, 100% { filter: hue-rotate(0deg) drop-shadow(0 0 15px rgba(129, 140, 248, 0.25)); }
-  50% { filter: hue-rotate(30deg) drop-shadow(0 0 20px rgba(244, 114, 182, 0.3)); }
+@keyframes crystalShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .description {
