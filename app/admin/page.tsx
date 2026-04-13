@@ -223,19 +223,34 @@ export default function AdminDashboard() {
         }
     };
 
-    const handleDeleteAccount = (acc: any) => {
+    const handleDeleteAccount = async (acc: any) => {
         try {
-            if (!acc || !acc.id) return;
-            const isUserSure = window.confirm(`[${acc.email}] 계정과 연동된 모든 매장 정보를 영구 삭제하시겠습니까?`);
-            if (isUserSure) {
-                const associatedStore = stores.find(s => s.vendor_id === acc.id);
-                if (associatedStore) deleteStore(associatedStore.id);
-                deleteAccount(acc.id);
-                alert('계정과 매장 정보가 성공적으로 삭제되었습니다.');
+            if (!acc || !acc.id) {
+                alert('삭제할 계정 정보를 찾을 수 없습니다.');
+                return;
             }
-        } catch (error) {
-            console.error("Delete failed:", error);
-            alert('삭제 처리 중 오류가 발생했습니다.');
+            
+            const isUserSure = window.confirm(`[${acc.email}] 계정과 연동된 모든 매장 정보를 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`);
+            if (!isUserSure) return;
+
+            // 1. 해당 계정이 소유한 모든 매장 찾기
+            const associatedStores = (stores || []).filter(s => s.vendor_id === acc.id);
+            
+            // 2. 연결된 매장 순차적으로 모두 삭제
+            if (associatedStores.length > 0) {
+                console.log(`${associatedStores.length}개의 연결된 매장을 먼저 삭제합니다.`);
+                for (const store of associatedStores) {
+                    await deleteStore(store.id);
+                }
+            }
+
+            // 3. 마지막으로 계정(프로필) 삭제
+            await deleteAccount(acc.id);
+            
+            alert('계정과 관련된 모든 정보가 안전하게 삭제되었습니다.');
+        } catch (error: any) {
+            console.error("삭제 처리 중 치명적 오류:", error);
+            alert(`삭제 중 오류가 발생했습니다: ${error.message || '데이터베이스 통신 오류'}`);
         }
     };
 

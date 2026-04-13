@@ -295,16 +295,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const deleteAccount = async (id: string) => {
     try {
-        // Warning: This only deletes the profile, not the auth user (requires admin API)
+        console.log("계정 삭제 시도 중... ID:", id);
+        // 프로필 삭제 (실제 Auth 유저는 Admin API 권한이 필요하여 명부만 정리)
         const { error } = await supabase
             .from('profiles')
             .delete()
             .eq('id', id);
-        if (error) throw error;
+            
+        if (error) {
+            console.error("DB 삭제 실패:", error.message);
+            throw error;
+        }
+        
+        // 목록 새로고침
         await fetchAccounts();
-    } catch (err) {
-        console.error("Delete account failed:", err);
+        return true;
+    } catch (err: any) {
+        console.error("계정 삭제 프로세스 오류:", err);
+        // 로컬 목록에서라도 우선 제거하여 사용자 경험 유지
         setAccounts(prev => prev.filter(a => a.id !== id));
+        throw err;
     }
   };
 
