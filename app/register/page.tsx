@@ -56,28 +56,42 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-        // 1. Sign up user
-        const { data, error: signUpError } = await supabase.auth.signUp({
+        // 1. Sign up user (or handle existing)
+        let userId = '';
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email: formData.email,
             password: formData.password,
         });
 
-        if (signUpError) throw signUpError;
-        if (!data.user) throw new Error('회원가입에 실패했습니다.');
+        if (signUpError) {
+            if (signUpError.message.includes('already registered')) {
+                // If already registered, we try to get the user ID via sign in to proceed
+                // In a real app, we'd confirm with the user, but for this specific request:
+                const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                    email: formData.email,
+                    password: formData.password,
+                });
+                if (signInError) throw new Error('사용 중인 이메일입니다. 비밀번호가 틀렸거나 인증이 필요합니다.');
+                userId = signInData.user?.id || '';
+            } else {
+                throw signUpError;
+            }
+        } else {
+            userId = signUpData.user?.id || '';
+        }
 
-        // 2. Create/Update Profile
-        const { error: profileError } = await supabase.from('profiles').upsert([{
-            id: data.user.id,
-            role: 'vendor',
+        if (!userId) throw new Error('계정 정보를 확인할 수 없습니다.');
+
+        // 2. Create/Update Profile (Role is kept or updated to vendor)
+        await supabase.from('profiles').upsert([{
+            id: userId,
+            role: 'vendor', // Ensure they have vendor capability
             unit_info: `${formData.dong} ${formData.ho}`
         }], { onConflict: 'id' });
-        if (profileError) {
-            console.warn("Profile upsert warning (might be handled by trigger):", profileError);
-        }
 
         // 3. Create Store
         const { error: storeError } = await supabase.from('stores').insert([{
-            vendor_id: data.user.id,
+            vendor_id: userId,
             store_name: formData.storeName,
             category: formData.category as StoreCategory,
             location: `${formData.dong} ${formData.ho}`,
@@ -85,6 +99,7 @@ export default function RegisterPage() {
             description: `${formData.storeName}입니다. 신규 신청된 매장입니다.`,
             is_verified: false
         }]);
+        
         if (storeError) throw storeError;
 
         setIsSuccess(true);
