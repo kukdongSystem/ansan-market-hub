@@ -15,7 +15,7 @@ interface DataContextType {
   setCurrentUser: (user: any | null) => void;
   updateAccount: (id: string, updates: any) => Promise<void>;
   updateCurrentUserPassword: (password: string) => Promise<boolean>;
-  deleteAccount: (email: string) => Promise<void>;
+  deleteAccount: (id: string) => Promise<void>;
   resetAllData: () => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
@@ -293,7 +293,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteAccount = async (id: string) => {
+  const deleteAccount = async (id: string): Promise<void> => {
     try {
         console.log("계정 삭제 시도 중... ID:", id);
         // 프로필 삭제 (실제 Auth 유저는 Admin API 권한이 필요하여 명부만 정리)
@@ -309,7 +309,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         
         // 목록 새로고침
         await fetchAccounts();
-        return true;
     } catch (err: any) {
         console.error("계정 삭제 프로세스 오류:", err);
         // 로컬 목록에서라도 우선 제거하여 사용자 경험 유지
