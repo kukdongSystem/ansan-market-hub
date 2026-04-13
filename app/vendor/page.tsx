@@ -25,33 +25,33 @@ import {
 import Link from 'next/link';
 
 export default function VendorDashboard() {
-    const { stores, currentUser, updateStore, setCurrentUser } = useData();
+    const { stores, currentUser, updateStore, setCurrentUser, isLoading: isDataLoading } = useData();
     const router = useRouter();
 
     const [isEditing, setIsEditing] = useState(false);
     const [editValues, setEditValues] = useState<Partial<Store>>({});
     const [tempTag, setTempTag] = useState('');
 
-    // Find the store belonging to this vendor by email
-    const myStore = stores.find(s => s.vendor_email === currentUser?.email);
-    
-    // For demo/prototype: if no exact email match, fallback to the latest one (safeguard)
-    const latestStore = [...stores].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))[0];
-    let activeStore = myStore || latestStore; 
-
-    // [Emergency Fix] '극동계전'은 무조건 승인된 것으로 간주 (테스트용)
-    if (activeStore && activeStore.store_name.includes('극동계전')) {
-        activeStore = { ...activeStore, is_verified: true };
-    }
+    // Find the store belonging to this vendor by id
+    const activeStore = stores.find(s => s.vendor_id === currentUser?.id);
 
     useEffect(() => {
-        if (!currentUser) {
+        if (!isDataLoading && !currentUser) {
             router.push('/login');
         }
-    }, [currentUser, router]);
+    }, [currentUser, isDataLoading, router]);
+
+    if (isDataLoading || (!currentUser && isDataLoading)) {
+        return <div className={styles.loading}>정보를 불러오는 중...</div>;
+    }
 
     if (!currentUser || !activeStore) {
-        return <div className={styles.loading}>정보를 불러오는 중...</div>;
+        return (
+            <div className={styles.loading}>
+                <p>매장 정보를 찾을 수 없거나 접근 권한이 없습니다.</p>
+                <Link href="/login" className={styles.logoutBtn} style={{ marginTop: '1rem' }}>로그인 페이지로</Link>
+            </div>
+        );
     }
 
     const startEdit = () => {

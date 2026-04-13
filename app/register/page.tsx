@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, MapPin, Building2, UserPlus, Briefcase } from 'lucide-react';
+import { Eye, EyeOff, MapPin, Building2, UserPlus, Briefcase, X } from 'lucide-react';
 import { CATEGORY_LABELS, StoreCategory } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { useData } from '@/context/DataContext';
@@ -65,13 +65,15 @@ export default function RegisterPage() {
         if (signUpError) throw signUpError;
         if (!data.user) throw new Error('회원가입에 실패했습니다.');
 
-        // 2. Create Profile
-        const { error: profileError } = await supabase.from('profiles').insert([{
+        // 2. Create/Update Profile
+        const { error: profileError } = await supabase.from('profiles').upsert([{
             id: data.user.id,
             role: 'vendor',
             unit_info: `${formData.dong} ${formData.ho}`
-        }]);
-        if (profileError) throw profileError;
+        }], { onConflict: 'id' });
+        if (profileError) {
+            console.warn("Profile upsert warning (might be handled by trigger):", profileError);
+        }
 
         // 3. Create Store
         const { error: storeError } = await supabase.from('stores').insert([{
@@ -227,6 +229,9 @@ export default function RegisterPage() {
                     placeholder="비밀번호 재입력"
                     required 
                     />
+                    <button type="button" className={styles.eyeBtnSmall} onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                 </div>
             </div>
             
@@ -234,6 +239,7 @@ export default function RegisterPage() {
                 <button type="submit" className={styles.submitBtnWide} disabled={isLoading}>
                     {isLoading ? '신청 처리 중...' : '매장 등록 신청'}
                 </button>
+                <Link href="/" className={styles.exitBtnWide}>취소 및 나가기</Link>
                 <p className={styles.helpText}>신청 후 관리자 승인이 필요합니다.</p>
             </div>
           </div>

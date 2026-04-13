@@ -1,7 +1,11 @@
 import { createClient, type User } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://gyhokcewvfmgsirqluwc.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5aG9rY2V3dmZtZ3NpcnFsdXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4OTM1NTEsImV4cCI6MjA5MTQ2OTU1MX0.Xb0jyRyKlvdBhhVs0pEbdmWdYQOoTnOzXcsw0teRxJE';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gyhokcewvfmgsirqluwc.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('Supabase URL or Anon Key is missing. Please check your .env.local file.');
+}
 
 export const supabase = createClient(
   supabaseUrl,
@@ -11,6 +15,7 @@ export const supabase = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      storageKey: 'ansan-market-hub-auth',
     },
   }
 );

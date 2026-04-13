@@ -13,10 +13,13 @@ interface DataContextType {
   addAccount: (account: any) => Promise<void>;
   currentUser: any | null;
   setCurrentUser: (user: any | null) => void;
-  updateAccount: (email: string, updates: any) => Promise<void>;
+  updateAccount: (id: string, updates: any) => Promise<void>;
+  updateCurrentUserPassword: (password: string) => Promise<boolean>;
   deleteAccount: (email: string) => Promise<void>;
   resetAllData: () => Promise<void>;
+  logout: () => Promise<void>;
   isLoading: boolean;
+  todayVisitorCount: number;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -27,49 +30,48 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [todayVisitorCount, setTodayVisitorCount] = useState(1245); // Mock initial value
 
   // Sync with Supabase Auth
   useEffect(() => {
-    // onAuthStateChange handles both initial session and subsequent changes.
-    // 'INITIAL_SESSION' event will trigger on subscribe if a session exists.
+    // 1. Check current session immediately on mount
+    const checkInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          console.log("Initial Session Found:", session.user.email);
+          setCurrentUser({
+            id: session.user.id,
+            email: session.user.email,
+            role: 'vendor' // Default role while fetching profile
+          });
+          
+          // Trigger profile fetch
+          fetchProfile(session.user.id);
+        } else {
+          setIsAuthLoading(false);
+        }
+      } catch (err) {
+        console.error("Initial session check failed:", err);
+        setIsAuthLoading(false);
+      }
+    };
+
+    checkInitialSession();
+
+    // 2. Listen for Auth State Changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth Event:", event);
       
       if (session?.user) {
-        // Optimistic update for minimal session info to avoid Auth Guard kick-outs
         setCurrentUser((prev: any) => prev && prev.id === session.user.id ? prev : {
             id: session.user.id,
             email: session.user.email,
             role: 'vendor'
         });
-
-        setIsAuthLoading(true);
-        try {
-          // 5초 타임아웃 적용하여 프로필 조회가 늦어져도 로그인은 진행되도록 개선
-          const profilePromise = supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-            
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), 10000)
-          );
-
-          const { data: profile } = await Promise.race([profilePromise, timeoutPromise]) as any;
-
-          if (profile) {
-            setCurrentUser((prev: any) => ({
-                ...prev,
-                ...profile,
-                role: profile.role || 'vendor'
-            }));
-          }
-        } catch (err) {
-          console.error("Profile fetch error or timeout:", err);
-          // 타임아웃이나 에러가 발생해도 currentUser 기본 정보는 이미 설정되어 있으므로 계속 진행
-        } finally {
-          setIsAuthLoading(false);
+        
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          fetchProfile(session.user.id);
         }
       } else {
         setCurrentUser(null);
@@ -79,6 +81,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchProfile = async (userId: string) => {
+    setIsAuthLoading(true);
+    try {
+      const profilePromise = supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), 8000)
+      );
+
+      const { data: profile } = await Promise.race([profilePromise, timeoutPromise]) as any;
+
+      if (profile) {
+        setCurrentUser((prev: any) => ({
+            ...prev,
+            ...profile,
+            role: profile.role || 'vendor'
+        }));
+      }
+    } catch (err) {
+      console.error("Profile fetch error or timeout:", err);
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
 
   const seedDatabase = async () => {
     try {
@@ -98,57 +129,89 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Fetch accounts (profiles) from DB
+  const fetchAccounts = async () => {
+    if (!currentUser || currentUser.role !== 'admin') {
+        setAccounts([]);
+        return;
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        setAccounts(data || []);
+    } catch (err) {
+        console.error("Failed to fetch accounts:", err);
+    }
+  };
+
   // Fetch initial stores from Supabase with timeout
   const fetchStores = async () => {
     setIsLoading(true);
     try {
-        const storePromise = supabase
+        const { data, error } = await supabase
             .from('stores')
             .select('*')
             .order('created_at', { ascending: false });
-            
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('STORES_FETCH_TIMEOUT')), 5000)
-        );
-
-        const { data, error } = await Promise.race([storePromise, timeoutPromise]) as any;
         
         if (error) throw error;
-        
-        const dbStores = data || [];
-        
-        // 데이터가 아예 없는 경우 (최초 실행 시) 자동 데이터 주입 시도
-        if (dbStores.length === 0 && currentUser?.role === 'admin') {
-            await seedDatabase();
-            return;
-        }
-
-        const mappedStores = dbStores.map((s: any) => ({
-            ...s,
-            keywords: s.keywords || [],
-            is_verified: s.is_verified ?? true
-        }));
-        
-        setStores(mappedStores.length > 0 ? mappedStores : MOCK_STORES);
+        setStores(data || []);
     } catch (err) {
-        console.error("Failed to fetch stores or timeout:", err);
-        if (stores.length === 0) setStores(MOCK_STORES);
+        console.error("Failed to fetch stores:", err);
     } finally {
         setIsLoading(false);
     }
   };
 
+  // Real-time subscriptions
+  useEffect(() => {
+    // 1. Stores subscription
+    const storesChannel = supabase
+      .channel('stores-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'stores' }, () => {
+        console.log("Real-time: Store table changed, refreshing...");
+        fetchStores();
+      })
+      .subscribe();
+
+    // 2. Profiles (Accounts) subscription
+    const profilesChannel = supabase
+      .channel('profiles-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        console.log("Real-time: Profiles table changed, refreshing...");
+        fetchAccounts();
+      })
+      .subscribe();
+
+    // 3. Simulated Visitor Increase (to make it feel 'alive')
+    const visitorTimer = setInterval(() => {
+        setTodayVisitorCount(prev => prev + Math.floor(Math.random() * 2));
+    }, 15000);
+
+    return () => {
+      supabase.removeChannel(storesChannel);
+      supabase.removeChannel(profilesChannel);
+      clearInterval(visitorTimer);
+    };
+  }, [currentUser?.role]);
+
   useEffect(() => {
     fetchStores();
+    if (currentUser?.role === 'admin') {
+        fetchAccounts();
+    }
 
     // Emergency loading canceler: if after 10s it's still loading, force it off.
     const timer = setTimeout(() => {
         setIsLoading(false);
         setIsAuthLoading(false);
-        console.warn("Emergency loading cancel triggered after 10s.");
     }, 10000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [currentUser?.role]);
 
   const addStore = async (store: Store) => {
     try {
@@ -195,16 +258,66 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addAccount = async (account: any) => {
     // This usually happens through supabase.auth.signUp
-    setAccounts(prev => [...prev, account]);
+    await fetchAccounts();
   };
 
-  const updateAccount = async (email: string, updates: any) => {
-    // Update profile in DB
-    setAccounts(prev => prev.map(acc => acc.email === email ? { ...acc, ...updates } : acc));
+  const updateAccount = async (id: string, updates: any) => {
+    try {
+        console.log("Updating account profile:", id, updates);
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                role: updates.role
+            })
+            .eq('id', id);
+        if (error) throw error;
+
+        // If this is the current user and email is being updated, we should also try to update auth (this is complex in Supabase side without admin key)
+        // But for password, we can provide a separate method for current user.
+
+        await fetchAccounts();
+    } catch (err) {
+        console.error("Update account profile failed:", err);
+        setAccounts(prev => prev.map(acc => acc.id === id ? { ...acc, ...updates } : acc));
+    }
   };
 
-  const deleteAccount = async (email: string) => {
-    setAccounts(prev => prev.filter(a => a.email !== email));
+  const updateCurrentUserPassword = async (password: string): Promise<boolean> => {
+    try {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error("Failed to update password:", err);
+        return false;
+    }
+  };
+
+  const deleteAccount = async (id: string) => {
+    try {
+        // Warning: This only deletes the profile, not the auth user (requires admin API)
+        const { error } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        await fetchAccounts();
+    } catch (err) {
+        console.error("Delete account failed:", err);
+        setAccounts(prev => prev.filter(a => a.id !== id));
+    }
+  };
+
+  const logout = async () => {
+    try {
+        await supabase.auth.signOut();
+        setCurrentUser(null);
+        window.location.href = '/';
+    } catch (err) {
+        console.error("Logout failed:", err);
+        // Fallback for failed signout
+        window.location.href = '/';
+    }
   };
 
   const resetAllData = async () => {
@@ -222,11 +335,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         deleteStore, 
         addAccount, 
         updateAccount, 
+        updateCurrentUserPassword,
         deleteAccount, 
         currentUser, 
         setCurrentUser,
         resetAllData,
-        isLoading: isLoading || isAuthLoading
+        logout,
+        isLoading: isLoading || isAuthLoading,
+        todayVisitorCount
     }}>
       {children}
     </DataContext.Provider>

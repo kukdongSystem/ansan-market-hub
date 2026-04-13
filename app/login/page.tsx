@@ -17,11 +17,8 @@ export default function LoginPage() {
   const [message, setMessage] = useState('');
   const router = useRouter();
 
-  useEffect(() => {
-    if (!isDataLoading && currentUser) {
-      router.replace('/admin');
-    }
-  }, [currentUser, isDataLoading, router]);
+  // Notice: We removed the auto-redirect to allow users to see their status or logout
+  // if they intended to login as a different account (e.g. Partner login)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,51 +27,40 @@ export default function LoginPage() {
 
     try {
         // 프로젝트가 휴면 상태일 경우를 대비해 넉넉하게 30초 타임아웃 설정
-        const { user, error: signError } = await signInWithPasswordDirect(
+        const { user: authUser, error: signError } = await signInWithPasswordDirect(
           email,
           password,
           30000
         );
 
         if (signError) throw signError;
-        if (!user) throw new Error('세션을 가져오지 못했습니다.');
+        if (!authUser) throw new Error('세션을 가져오지 못했습니다.');
 
-        // onAuthStateChange보다 navigation이 먼저 일어나면 /admin이 currentUser=null로 보고 /login으로 튕깁니다.
-        // 이를 방지하기 위해 Context에 수동으로 세션 정보를 주입합니다.
+        // 1. Fetch profile to get role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authUser.id)
+          .maybeSingle();
+
+        const role = profile?.role || 'vendor';
+
+        // 2. Set user in context
         setCurrentUser({
-          id: user.id,
-          email: user.email,
-          role: 'vendor', // 기본값, 하단 프로필 조회에서 갱신됨
+          id: authUser.id,
+          email: authUser.email,
+          ...profile,
+          role: role,
         });
-
-        // profiles는 네트워크/RLS 등으로 지연·무응답일 수 있어 로그인 완료를 막지 않음 (백그라운드 반영)
-        const fetchProfile = async () => {
-          try {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', user.id)
-              .maybeSingle();
-            
-            if (profile) {
-              setCurrentUser((prev: any) => ({
-                ...prev,
-                ...profile,
-                role: profile.role || 'vendor',
-              }));
-            }
-          } catch (e) {
-            console.error("Profile fetch background failed:", e);
-          }
-        };
-        void fetchProfile();
 
         // 로그인 성공 시 메시지 표시
         setMessage('로그인 성공! 이동 중...');
         
-        // Context 동기화 및 렌더링 시간을 벌기 위해 아주 약간 지연 후 이동
+        // 3. Conditional redirect
+        const destination = role === 'admin' ? '/admin' : '/vendor';
+        
         setTimeout(() => {
-          router.push('/admin');
+          router.push(destination);
         }, 500);
     } catch (err: any) {
         let msg = err.message || '로그인에 실패했습니다.';
@@ -86,6 +72,45 @@ export default function LoginPage() {
         setIsLoading(false);
     }
   };
+
+  if (!isDataLoading && currentUser) {
+      return (
+          <div className={styles.container}>
+              <div className={`${styles.card} animate-fade-in`}>
+                  <header className={styles.header}>
+                      <div className={styles.logo}>
+                          <img src="/images/logo.png" alt="Logo" style={{ height: '36px', width: '36px', objectFit: 'contain', marginRight: '0.5rem', borderRadius: '8px' }} />
+                          ANSAN MARKET HUB
+                      </div>
+                      <h1 style={{ marginTop: '1.5rem' }}>이미 로그인됨</h1>
+                      <p style={{ color: '#94a3b8' }}><b>{currentUser.email}</b> 계정으로 로그인되어 있습니다.</p>
+                  </header>
+                  
+                  <div className={styles.form} style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <button 
+                          onClick={() => router.push(currentUser.role === 'admin' ? '/admin' : '/vendor')}
+                          className={styles.loginBtn}
+                      >
+                          대시보드로 이동
+                      </button>
+                      <button 
+                          onClick={async () => {
+                              await supabase.auth.signOut();
+                              window.location.reload();
+                          }}
+                          className={styles.loginBtn}
+                          style={{ backgroundColor: 'transparent', border: '1px solid #475569', color: '#94a3b8' }}
+                      >
+                          로그아웃 후 다른 계정으로 로그인
+                      </button>
+                      <Link href="/" className={styles.homeLink} style={{ margin: '1rem auto 0' }}>
+                          <Home size={16} /> 메인으로 돌아가기
+                      </Link>
+                  </div>
+              </div>
+          </div>
+      );
+  }
 
   return (
     <div className={styles.container}>

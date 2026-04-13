@@ -37,7 +37,7 @@ export const CATEGORY_LABELS: Record<StoreCategory, string> = {
   safety: '안전/소방/보안',
   cnc: '기계/금형/가공',
   printing: '인쇄/광고/간판',
-  food: '식당/까페/간식',
+  food: '식당/카페/간식',
   service: '서비스/금융/행정',
   chemical: '화학/페인트/케미칼',
   etc: '기타/미분류'
@@ -112,6 +112,8 @@ export const MOCK_STORES: Store[] = [
     road_address: '경기도 안산시 단원구 산단로 326 (안산유통상가 1차)',
     phone: '031-494-1111',
     keywords: ['베어링', '체인', '동력전달장치'],
+    description: null,
+    image_url: null,
     is_verified: true,
     created_at: new Date().toISOString()
   }

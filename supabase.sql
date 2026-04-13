@@ -27,6 +27,7 @@ ALTER TABLE stores ENABLE ROW LEVEL SECURITY;
 
 -- 정책: 본인 프로필만 수정 가능, 조회는 모두 가능 (또는 관리자만)
 CREATE POLICY "Profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
+CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
 -- 정책: 관리자는 모든 프로필 수정 가능
@@ -43,3 +44,17 @@ CREATE POLICY "Vendors can manage own store" ON stores
 -- 정책: 관리자는 모든 매장 관리 가능
 CREATE POLICY "Admins can manage all stores" ON stores
   FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- 자동 프로필 생성 트리거 (신규 가입 시)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, role)
+  VALUES (new.id, 'vendor');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

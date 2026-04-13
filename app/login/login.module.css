@@ -269,19 +269,20 @@
 
 .colTitle {
   font-size: 0.95rem;
-  color: var(--primary);
+  color: #38bdf8;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
   font-weight: 800;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
 }
 
 .labelSmall {
   display: block;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #94a3b8;
+  color: #cbd5e1;
   margin-bottom: 0.4rem;
   text-transform: uppercase;
 }
@@ -353,7 +354,28 @@
   font-size: 0.75rem;
   color: #64748b;
   text-align: center;
+  margin-top: 1.25rem;
+}
+
+.exitBtnWide {
+  display: block;
+  width: 100%;
+  text-align: center;
   margin-top: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.exitBtnWide:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .policyWarning {

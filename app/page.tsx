@@ -7,6 +7,8 @@ import styles from './page.module.css';
 import { Hammer, Zap, ShieldCheck, Utensils, UploadCloud, UserPlus, LogIn, Settings, Package, Cog, Building2, Beaker, Monitor, Globe, ChevronDown, Menu, X } from 'lucide-react';
 import SearchBox from '@/components/SearchBox';
 import { translations, Language } from '@/constants/translations';
+import { useData } from '@/context/DataContext';
+import { CATEGORY_LABELS, StoreCategory } from '@/types';
 
 const HERO_IMAGES = [
   {
@@ -45,6 +47,30 @@ const LAN_LABELS: Record<Language, string> = {
   es: 'Español'
 };
 
+const CATEGORY_ICONS: Record<StoreCategory, any> = {
+  fastener: Cog,
+  tool: Hammer,
+  bearing: Cog,
+  welding: Zap,
+  electric: Zap,
+  electronics: Monitor,
+  pipe: Building2,
+  packaging: Package,
+  safety: ShieldCheck,
+  cnc: Settings,
+  printing: Globe,
+  food: Utensils,
+  service: Monitor,
+  chemical: Beaker,
+  etc: Package
+};
+
+const MAIN_CATEGORIES: StoreCategory[] = [
+  'fastener', 'tool', 'bearing', 'welding', 
+  'electric', 'electronics', 'pipe', 'cnc', 
+  'safety', 'chemical', 'food', 'service'
+];
+
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPageDragging, setIsPageDragging] = useState(false);
@@ -52,6 +78,7 @@ export default function Home() {
   const [isLanOpen, setIsLanOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [country, setCountry] = useState<string | null>(null);
+  const { todayVisitorCount } = useData();
   const router = useRouter();
 
   const t = translations[lang] as any;
@@ -85,7 +112,9 @@ export default function Home() {
     }
   };
 
-  const isKorea = country === 'KR' || country === null; // null means check still in progress
+  const isLocal = typeof window !== 'undefined' && 
+                  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const isKorea = country === 'KR' || country === null || isLocal; // null means check still in progress, isLocal allows test
 
   return (
     <div 
@@ -194,6 +223,10 @@ export default function Home() {
               placeholders={[t.searchPlaceholder, t.searchPlaceholderAlt]}
             />
           </div>
+          <div className={styles.visitorBadge}>
+            <span className={styles.pulseDot}></span>
+            <span>현재 <strong>{todayVisitorCount.toLocaleString()}명</strong>의 사용자가 검색 서비스를 이용 중입니다</span>
+          </div>
         </div>
 
         <div className={styles.slideIndicators}>
@@ -214,48 +247,24 @@ export default function Home() {
             <p>{t.categoriesDesc}</p>
           </div>
           <div className={styles.categoryGrid}>
-            <Link href="/search?q=공구" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
-              <div className={styles.catIcon}><Hammer size={32}/></div>
-              <div className={styles.catContent}>
-                <h3>{t.catMachineTitle}</h3>
-                <p>{t.catMachineDesc}</p>
-              </div>
-            </Link>
-            <Link href="/search?q=전자" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
-              <div className={styles.catIcon}><Zap size={32}/></div>
-              <div className={styles.catContent}>
-                <h3>{t.catElectricTitle}</h3>
-                <p>{t.catElectricDesc}</p>
-              </div>
-            </Link>
-            <Link href="/search?q=배관" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
-              <div className={styles.catIcon}><Building2 size={32}/></div>
-              <div className={styles.catContent}>
-                <h3>{t.catPipeTitle}</h3>
-                <p>{t.catPipeDesc}</p>
-              </div>
-            </Link>
-            <Link href="/search?q=유공압" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
-              <div className={styles.catIcon}><Cog size={32}/></div>
-              <div className={styles.catContent}>
-                <h3>{t.catHydroTitle}</h3>
-                <p>{t.catHydroDesc}</p>
-              </div>
-            </Link>
-            <Link href="/search?q=화학" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
-              <div className={styles.catIcon}><Beaker size={32}/></div>
-              <div className={styles.catContent}>
-                <h3>{t.catChemTitle}</h3>
-                <p>{t.catChemDesc}</p>
-              </div>
-            </Link>
-            <Link href="/search?q=포장" className={styles.categoryCard} style={{ textDecoration: 'none' }}>
-              <div className={styles.catIcon}><Package size={32}/></div>
-              <div className={styles.catContent}>
-                <h3>{t.catSafeTitle}</h3>
-                <p>{t.catSafeDesc}</p>
-              </div>
-            </Link>
+            {MAIN_CATEGORIES.map((catKey) => {
+              const Icon = CATEGORY_ICONS[catKey];
+              const label = CATEGORY_LABELS[catKey];
+              return (
+                <Link 
+                  key={catKey}
+                  href={`/search?q=${encodeURIComponent(label)}`} 
+                  className={styles.categoryCard} 
+                  style={{ textDecoration: 'none' }}
+                >
+                  <div className={styles.catIcon} data-cat={catKey}><Icon size={32}/></div>
+                  <div className={styles.catContent}>
+                    <h3>{label}</h3>
+                    <p>{t[`cat_${catKey}_desc`] || translations.ko[`cat_${catKey}_desc` as any] || '전문 매장 찾기'}</p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
 
@@ -265,8 +274,8 @@ export default function Home() {
             <span className={styles.statLabel}>{t.statsStores}</span>
           </div>
           <div className={styles.statItem}>
-            <span className={styles.statValue}>300+</span>
-            <span className={styles.statLabel}>{t.statsFandB}</span>
+            <span className={styles.statValue}>{todayVisitorCount.toLocaleString()}</span>
+            <span className={styles.statLabel}>오늘 방문객</span>
           </div>
           <div className={styles.statItem}>
             <span className={styles.statValue}>AI</span>
