@@ -260,7 +260,7 @@ export default function Home() {
                   <div className={styles.catIcon} data-cat={catKey}><Icon size={32}/></div>
                   <div className={styles.catContent}>
                     <h3>{label}</h3>
-                    <p>{t[`cat_${catKey}_desc`] || translations.ko[`cat_${catKey}_desc` as any] || '전문 매장 찾기'}</p>
+                    <p>{(t as Record<string, string>)[`cat_${catKey}_desc`] || (translations.ko as Record<string, string>)[`cat_${catKey}_desc`] || '전문 매장 찾기'}</p>
                   </div>
                 </Link>
               );
