@@ -55,7 +55,9 @@ export default function RegisterPage() {
     
     setIsLoading(true);
 
+    // Build version: 1.0.2 (force refresh)
     try {
+        console.log("Starting registration for:", formData.email);
         // 1. Sign up user (or handle existing)
         let userId = '';
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -64,14 +66,20 @@ export default function RegisterPage() {
         });
 
         if (signUpError) {
-            if (signUpError.message.includes('already registered')) {
-                // If already registered, we try to get the user ID via sign in to proceed
-                // In a real app, we'd confirm with the user, but for this specific request:
+            const rawMsg = signUpError.message.toLowerCase();
+            console.log("Signup error detected:", rawMsg);
+            
+            if (rawMsg.includes('already registered') || rawMsg.includes('이미 등록') || rawMsg.includes('exists')) {
+                console.log("Existing user detected, attempting link via sign in...");
                 const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
                     email: formData.email,
                     password: formData.password,
                 });
-                if (signInError) throw new Error('사용 중인 이메일입니다. 비밀번호가 틀렸거나 인증이 필요합니다.');
+                
+                if (signInError) {
+                    console.error("Sign in failed for existing user:", signInError);
+                    throw new Error('이미 사용 중인 이메일입니다. 기존 계정의 비밀번호를 정확히 입력해 주세요.');
+                }
                 userId = signInData.user?.id || '';
             } else {
                 throw signUpError;
@@ -80,14 +88,18 @@ export default function RegisterPage() {
             userId = signUpData.user?.id || '';
         }
 
-        if (!userId) throw new Error('계정 정보를 확인할 수 없습니다.');
+        if (!userId) throw new Error('계정 정보를 확인할 수 없습니다. 다시 시도해 주세요.');
+
+        console.log("Proceeding with userId:", userId);
 
         // 2. Create/Update Profile (Role is kept or updated to vendor)
-        await supabase.from('profiles').upsert([{
+        const { error: upsertError } = await supabase.from('profiles').upsert([{
             id: userId,
-            role: 'vendor', // Ensure they have vendor capability
+            role: 'vendor', 
             unit_info: `${formData.dong} ${formData.ho}`
         }], { onConflict: 'id' });
+        
+        if (upsertError) console.warn("Profile upsert notice:", upsertError);
 
         // 3. Create Store
         const { error: storeError } = await supabase.from('stores').insert([{
@@ -100,27 +112,16 @@ export default function RegisterPage() {
             is_verified: false
         }]);
         
-        if (storeError) throw storeError;
-
-        setIsSuccess(true);
-    } catch (err: any) {
-        console.error("Registration error:", err);
-        
-        // 에러 메시지 한글 번역
-        let errorMessage = '등록 중 오류가 발생했습니다.';
-        const rawMessage = err.message || '';
-
-        if (rawMessage.includes('User already registered')) {
-            errorMessage = '이미 등록된 이메일 주소입니다. 로그인을 시도하거나 다른 이메일을 사용해 주세요.';
-        } else if (rawMessage.includes('Password should be at least 6 characters')) {
-            errorMessage = '비밀번호는 최소 6자 이상이어야 합니다.';
-        } else if (rawMessage.includes('Invalid email')) {
-            errorMessage = '유효하지 않은 이메일 형식입니다.';
-        } else {
-            errorMessage = rawMessage || errorMessage;
+        if (storeError) {
+            console.error("Store insertion error:", storeError);
+            throw storeError;
         }
 
-        alert(errorMessage);
+        console.log("Registration successful!");
+        setIsSuccess(true);
+    } catch (err: any) {
+        console.error("Final catch block:", err);
+        alert(err.message || '알 수 없는 오류가 발생했습니다.');
     } finally {
         setIsLoading(false);
     }
