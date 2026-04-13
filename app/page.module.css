@@ -306,31 +306,31 @@
 
 .titleHighlight {
   display: inline-block;
-  /* Premium multi-color gradient: Sky -> Indigo -> Purple -> Rose -> Sky (for loop) */
+  /* Neon & Super Bright Gradient: Cyan -> Electric Pink -> Azure -> Lime -> Cyan */
   background: linear-gradient(
     to right, 
-    #38bdf8 0%, 
-    #818cf8 25%, 
-    #c084fc 50%, 
-    #fb7185 75%,
-    #38bdf8 100%
+    #00f2ff 0%, 
+    #7000ff 25%, 
+    #ff00f2 50%, 
+    #00f2ff 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: colorfulGradient 6s linear infinite;
+  animation: colorfulGradient 5s linear infinite;
   position: relative;
   -webkit-font-smoothing: antialiased;
-  /* Subtle glow to make colors pop on dark BG */
-  filter: drop-shadow(0 0 15px rgba(129, 140, 248, 0.3));
+  /* Remove heavy shadow that makes it look 'burnt', add crisp outer glow */
+  text-shadow: none;
+  filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.5));
 }
 
 @keyframes colorfulGradient {
   to { background-position: 200% center; }
 }
 
-/* Sub-shimmer to add premium sparkle without distraction */
+/* Sub-shimmer: brighter and faster for 'sparkle' feel */
 .titleHighlight::after {
   content: '';
   position: absolute;
@@ -338,9 +338,9 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
   transform: translateX(-100%);
-  animation: subtleSweep 4s infinite;
+  animation: subtleSweep 3s infinite;
 }
 
 @keyframes subtleSweep {
