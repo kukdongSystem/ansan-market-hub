@@ -159,7 +159,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
             .order('created_at', { ascending: false });
         
         if (error) throw error;
-        setStores(data || []);
+        
+        // DB 컬럼명 매핑 (name -> store_name, owner_id -> vendor_id)
+        const mappedData = (data || []).map((d: any) => ({
+            ...d,
+            store_name: d.name || d.store_name, 
+            vendor_id: d.owner_id || d.vendor_id
+        }));
+        
+        setStores(mappedData);
     } catch (err) {
         console.error("Failed to fetch stores:", err);
     } finally {
@@ -169,25 +177,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // Real-time subscriptions
   useEffect(() => {
-    // 1. Stores subscription
     const storesChannel = supabase
       .channel('stores-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'stores' }, () => {
-        console.log("Real-time: Store table changed, refreshing...");
         fetchStores();
       })
       .subscribe();
 
-    // 2. Profiles (Accounts) subscription
     const profilesChannel = supabase
       .channel('profiles-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
-        console.log("Real-time: Profiles table changed, refreshing...");
         fetchAccounts();
       })
       .subscribe();
 
-    // 3. Simulated Visitor Increase (to make it feel 'alive')
     const visitorTimer = setInterval(() => {
         setTodayVisitorCount(prev => prev + Math.floor(Math.random() * 2));
     }, 15000);
@@ -204,76 +207,75 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (currentUser?.role === 'admin') {
         fetchAccounts();
     }
-
-    // Emergency loading canceler: if after 10s it's still loading, force it off.
-    const timer = setTimeout(() => {
-        setIsLoading(false);
-        setIsAuthLoading(false);
-    }, 10000);
-    return () => clearTimeout(timer);
   }, [currentUser?.role]);
 
   const addStore = async (store: Store) => {
     try {
-        const initialData = {
-            ...store,
-            vendor_id: currentUser?.id
+        const dbData: any = {
+            name: store.store_name,
+            owner_id: currentUser?.id,
+            road_address: store.road_address || '',
+            phone: store.phone || '',
+            category: store.category,
+            is_verified: store.is_verified ?? false
         };
 
-        const insertWithSafety = async (data: any): Promise<any> => {
-            const { error } = await supabase.from('stores').insert([data]);
-            if (error && error.message.includes('column')) {
-                const filteredData = { ...data };
-                let fallbackDesc = data.description || '';
-                
-                if (error.message.includes('location') && 'location' in filteredData) {
-                    fallbackDesc += `\n[위치: ${filteredData.location}]`;
-                    delete filteredData.location;
-                }
-                if (error.message.includes('keywords') && 'keywords' in filteredData) {
-                    fallbackDesc += `\n[키워드: ${filteredData.keywords.join(', ')}]`;
-                    delete filteredData.keywords;
-                }
-                
-                if (Object.keys(filteredData).length === Object.keys(data).length) throw error;
-                return insertWithSafety({ ...filteredData, description: fallbackDesc.trim() });
-            }
-            if (error) throw error;
-            return true;
-        };
+        let finalDescription = store.description || '';
+        if (store.location) {
+            finalDescription = `[상세위치: ${store.location}]\n${finalDescription}`;
+        }
+        if (store.keywords && store.keywords.length > 0) {
+            finalDescription = `${finalDescription}\n[키워드: ${store.keywords.join(', ')}]`;
+        }
+        dbData.description = finalDescription.trim();
 
-        await insertWithSafety(initialData);
-        await fetchStores(); // Refresh
+        const { error } = await supabase.from('stores').insert([dbData]);
+        if (error) throw error;
+
+        await fetchStores();
     } catch (err: any) {
         console.error("Add store failed:", err);
-        alert(`매장 등록 실패: ${err.message || '데이터베이스 오류'}`);
-        setStores(prev => [store, ...prev]);
+        throw err;
     }
   };
 
   const updateStore = async (id: string, updates: Partial<Store>) => {
     try {
-        const updateWithSafety = async (data: any): Promise<any> => {
-            const { error } = await supabase.from('stores').update(data).eq('id', id);
-            
-            if (error && error.message.includes('column')) {
-                const filteredData = { ...data };
-                if (error.message.includes('location') && 'location' in filteredData) delete filteredData.location;
-                if (error.message.includes('keywords') && 'keywords' in filteredData) delete filteredData.keywords;
-                
-                if (Object.keys(filteredData).length === Object.keys(data).length) throw error;
-                return updateWithSafety(filteredData);
-            }
-            if (error) throw error;
-            return true;
-        };
+        // DB 컬럼에 맞게 매핑 변환
+        const dbUpdates: any = { ...updates };
+        
+        if (updates.store_name) {
+            dbUpdates.name = updates.store_name;
+            delete dbUpdates.store_name;
+        }
+        if (updates.vendor_id) {
+            dbUpdates.owner_id = updates.vendor_id;
+            delete dbUpdates.vendor_id;
+        }
 
-        await updateWithSafety(updates);
+        // location이나 keywords가 포함된 경우 description에 통합 처리
+        if (updates.location || updates.keywords) {
+            const currentStore = stores.find(s => s.id === id);
+            let finalDesc = updates.description !== undefined ? updates.description : (currentStore?.description || '');
+            
+            const loc = updates.location !== undefined ? updates.location : currentStore?.location;
+            const keys = updates.keywords !== undefined ? updates.keywords : currentStore?.keywords;
+
+            if (loc) finalDesc = `[상세위치: ${loc}]\n${finalDesc}`;
+            if (keys && keys.length > 0) finalDesc = `${finalDesc}\n[키워드: ${keys.join(', ')}]`;
+            
+            dbUpdates.description = finalDesc.trim();
+            delete dbUpdates.location;
+            delete dbUpdates.keywords;
+        }
+
+        const { error } = await supabase.from('stores').update(dbUpdates).eq('id', id);
+        if (error) throw error;
+        
         await fetchStores();
     } catch (err: any) {
         console.error("Update store failed:", err);
         alert(`수정 실패: ${err.message}`);
-        setStores(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
     }
   };
 
