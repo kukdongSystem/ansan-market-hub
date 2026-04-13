@@ -37,6 +37,15 @@ import {
 import Link from 'next/link';
 
 export default function AdminDashboard() {
+    const getRoleLabel = (role: string) => {
+        switch (role) {
+            case 'admin': return '시스템 관리자';
+            case 'sub_admin': return '부관리자';
+            case 'vendor': return '입점주';
+            default: return '사용자';
+        }
+    };
+
     const { 
         stores, 
         addStore, 
@@ -526,6 +535,7 @@ export default function AdminDashboard() {
                                 >
                                     <option value="vendor">VENDOR (일반 업체)</option>
                                     <option value="admin">ADMIN (시스템 관리자)</option>
+                                    <option value="sub_admin">SUB_ADMIN (부관리자)</option>
                                 </select>
                             </div>
                         </div>
@@ -662,25 +672,27 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
                             <div className={styles.accountGrid}>
-                            {/* System Admins first */}
-                            {accounts.filter(a => a.role === 'admin').map((acc) => (
+                            {/* System Admins & Sub-Admins first */}
+                            {accounts.filter(a => a.role === 'admin' || a.role === 'sub_admin').map((acc) => (
                                 <div key={acc.id} className={`${styles.accountCard} ${acc.id === currentUser.id ? styles.myAccount : ''}`}>
                                     <div className={styles.accountHeader}>
                                         <div className={styles.accountInfo}>
-                                            <h4>{acc.id === currentUser.id ? '시스템 관리자 (본인)' : '관리자 계정'}</h4>
-                                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>전체 관리 권한</span>
+                                            <h4>{acc.id === currentUser.id ? '시스템 관리자 (본인)' : (acc.role === 'admin' ? '공동 관리자' : '부관리자 계정')}</h4>
+                                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{acc.role === 'admin' ? '전체 관리 권한' : '운영 지원 권한'}</span>
                                         </div>
-                                        <div className={`${styles.roleBadge} ${styles.adminMode}`}>ADMIN</div>
+                                        <div className={`${styles.roleBadge} ${acc.role === 'admin' ? styles.adminMode : styles.subAdminMode}`}>
+                                            {acc.role === 'admin' ? 'ADMIN' : 'SUB-ADMIN'}
+                                        </div>
                                     </div>
                                     <div className={styles.accountDetails}>
                                         <div className={styles.detailRow}>
                                             <span>로그인 ID:</span>
-                                            <strong>{acc.email || 'admin@ansan.com'}</strong>
+                                            <strong>{acc.email}</strong>
                                         </div>
                                         <div className={styles.detailRow}>
                                             <span>비밀번호:</span>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <strong>{visiblePasswords[acc.id] ? (acc.password || 'admin1234') : '••••••••'}</strong>
+                                                <strong>{visiblePasswords[acc.id] ? (acc.password || '••••••••') : '••••••••'}</strong>
                                                 <button className={styles.iconOpBtn} onClick={() => togglePasswordVisibility(acc.id)}>
                                                     {visiblePasswords[acc.id] ? <EyeOff size={14} /> : <Eye size={14} />}
                                                 </button>
@@ -690,8 +702,11 @@ export default function AdminDashboard() {
                                     <div className={styles.accountActions}>
                                         <button className={styles.editBtn} onClick={() => { 
                                             setEditingAccount(acc); 
-                                            setAccountEditValues({ ...acc, email: acc.email || 'admin@ansan.com', store_name: '시스템 관리자', isVendorEdit: false }); 
+                                            setAccountEditValues({ ...acc, email: acc.email, store_name: acc.role === 'admin' ? '시스템 관리자' : '부관리자', isVendorEdit: false }); 
                                         }}><Edit2 size={14} /> 보안 관리</button>
+                                        {acc.id !== currentUser.id && (
+                                            <button className={`${styles.resetBtn} ${styles.dangerLink}`} onClick={() => handleDeleteAccount(acc)} style={{ marginLeft: 'auto', border: 'none', background: 'none', color: '#ef4444', fontSize: '0.8rem', cursor: 'pointer' }}>탈퇴</button>
+                                        )}
                                     </div>
                                 </div>
                             ))}
