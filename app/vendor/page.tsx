@@ -92,71 +92,93 @@ export default function VendorDashboard() {
 
     if (!activeStore) {
         return (
-            <div className={styles.vendorContainer}>
-                <nav className={styles.topNav}>
-                    <Link href="/" className={styles.backLink}>
+            <div className={styles.vendorContainer} style={{ backgroundColor: '#0f172a' }}>
+                <nav className={styles.topNav} style={{ borderBottom: '1px solid #1e293b' }}>
+                    <Link href="/" className={styles.backLink} style={{ color: '#94a3b8' }}>
                         <ArrowLeft size={18} /> 서비스 메인으로
                     </Link>
                     <div className={styles.navRight}>
-                        <span className={styles.userEmail}>{currentUser.email} ({currentUser.role === 'admin' ? '시스템 관리자' : currentUser.role === 'sub_admin' ? '부관리자' : '입점주'})</span>
+                        <span className={styles.userEmail} style={{ color: '#f1f5f9' }}>{currentUser.email} (부관리자/입점주)</span>
                         <button onClick={handleLogout} className={styles.logoutBtn}>
                             <LogOut size={16} /> 로그아웃
                         </button>
                     </div>
                 </nav>
                 <div className={styles.mainContent}>
-                    <div className={adminStyles.modalContent} style={{ maxWidth: '600px', margin: '4rem auto', textAlign: 'center', padding: '3.5rem', border: '2px dashed #f59e0b' }}>
-                        <div style={{ backgroundColor: '#fef3c7', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem' }}>
-                            <StoreIcon size={40} color="#d97706" />
+                    <div className={adminStyles.modalContent} style={{ 
+                        maxWidth: '700px', 
+                        margin: '4rem auto', 
+                        textAlign: 'center', 
+                        padding: '4rem', 
+                        backgroundColor: '#1e293b',
+                        borderRadius: '2rem',
+                        border: '4px solid #334155',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    }}>
+                        <div style={{ backgroundColor: '#f59e0b', width: '100px', height: '100px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2.5rem' }}>
+                            <StoreIcon size={50} color="#0f172a" />
                         </div>
-                        <h1 style={{ color: 'white', fontSize: '2rem', marginBottom: '1.5rem' }}>🚨 매장 등록이 필요합니다 🚨</h1>
-                        <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: '1.5rem', borderRadius: '1rem', marginBottom: '2rem' }}>
-                            <p style={{ color: '#fbbf24', fontSize: '1.1rem', fontWeight: 'bold' }}>
-                                "{currentUser.email}" 계정은 아직 매장이 연결되지 않았습니다.
+                        
+                        <h1 style={{ color: '#fbbf24', fontSize: '2.5rem', fontWeight: '900', marginBottom: '2rem', letterSpacing: '-0.025em' }}>
+                            매장 정보를 등록해 주세요!
+                        </h1>
+                        
+                        <div style={{ backgroundColor: '#0f172a', padding: '2rem', borderRadius: '1.5rem', marginBottom: '3rem', textAlign: 'left', border: '1px solid #334155' }}>
+                            <p style={{ color: '#f8fafc', fontSize: '1.4rem', lineHeight: '1.6', fontWeight: '600' }}>
+                                📢 "{currentUser.email}" 님,<br/>
+                                아직 이곳에 등록된 매장이 없습니다.
                             </p>
-                            <p style={{ color: '#94a3b8', marginTop: '0.5rem' }}>
-                                부관리자 권한으로 매장을 직접 등록하고 관리를 시작하세요!
+                            <p style={{ color: '#cbd5e1', fontSize: '1.2rem', marginTop: '1rem', lineHeight: '1.5' }}>
+                                아래 버튼을 눌러 매장 이름과 위치를 입력하시면,<br/>
+                                즉시 매장 관리 대시보드를 사용하실 수 있습니다.
                             </p>
                         </div>
+
                         <button 
                             className={styles.loginBtn} 
                             onClick={() => {
-                                const storeName = prompt('✨ 등록하실 매장명을 입력해주세요 (예: 극동계전)');
+                                const storeName = prompt('🏢 [매장명 입력]\n\n어르신들도 알아보기 쉬운 매장 이름을 입력해 주세요.\n(예: 극동계전, 중앙상사)');
                                 if (!storeName) return;
-                                const location = prompt('📍 매장 위치를 입력해주세요 (예: 19동 104호)');
+                                const location = prompt('📍 [위치 입력]\n\n상가 내 정확한 위치를 입력해 주세요.\n(예: 19동 104호, 2층 가-201)');
                                 if (!location) return;
                                 
-                                alert('매장 정보를 생성합니다. 잠시만 기다려 주세요...');
+                                alert('⚙️ 매장 정보를 시스템에 안전하게 등록하고 있습니다.\n잠시만 기다려 주세요...');
                                 
                                 const { supabase } = require('@/lib/supabase');
+                                // Removing 'keywords' as it caused error in user's screenshot
                                 supabase.from('stores').insert([{
                                     vendor_id: currentUser.id,
                                     vendor_email: currentUser.email,
                                     store_name: storeName,
                                     category: 'etc',
                                     location: location,
-                                    keywords: [storeName],
-                                    description: `${storeName}입니다.`,
                                     is_verified: false
                                 }]).then(({ error }: any) => {
-                                    if (error) alert('❌ 오류 발생: ' + error.message);
+                                    if (error) {
+                                        console.error('DB Error:', error);
+                                        alert('❌ 등록 중 문제가 발생했습니다.\n\n오류: ' + (error.message || '알 수 없는 오류'));
+                                    }
                                     else {
-                                        alert('✅ 매장 등록 성공! 대시보드로 이동합니다.');
+                                        alert('✅ 축하합니다! 매장 등록이 완료되었습니다.\n새로운 대시보드로 이동합니다.');
                                         window.location.reload();
                                     }
                                 });
                             }}
                             style={{ 
-                                padding: '1.2rem 3rem', 
-                                fontSize: '1.2rem', 
-                                backgroundColor: '#f59e0b', 
-                                color: 'black',
-                                fontWeight: 'bold',
-                                borderRadius: '1rem',
-                                boxShadow: '0 8px 20px rgba(245, 158, 11, 0.3)'
+                                padding: '1.5rem 4rem', 
+                                fontSize: '1.5rem', 
+                                backgroundColor: '#fbbf24', 
+                                color: '#0f172a',
+                                fontWeight: '900',
+                                borderRadius: '1.2rem',
+                                width: '100%',
+                                cursor: 'pointer',
+                                transition: 'transform 0.2s',
+                                border: 'none',
+                                boxShadow: '0 10px 15px -3px rgba(251, 191, 36, 0.4)'
                             }}
                         >
-                             내 매장 지금 바로 등록하기
+                            내 매장 지금 바로 등록하기
                         </button>
                     </div>
                 </div>
