@@ -82,7 +82,6 @@ export default function RegisterPage() {
             category: formData.category as StoreCategory,
             location: `${formData.dong} ${formData.ho}`,
             road_address: currentAddress,
-            keywords: [formData.storeName, CATEGORY_LABELS[formData.category as StoreCategory]],
             description: `${formData.storeName}입니다. 신규 신청된 매장입니다.`,
             is_verified: false
         }]);
