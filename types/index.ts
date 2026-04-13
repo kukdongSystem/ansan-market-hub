@@ -1,8 +1,10 @@
-export type UserRole = 'admin' | 'vendor';
+export type UserRole = 'admin' | 'sub_admin' | 'vendor';
 
 export interface Profile {
   id: string;
   role: UserRole;
+  email: string;
+  display_name: string | null;
   unit_info: string | null;
   contact: string | null;
   created_at: string;

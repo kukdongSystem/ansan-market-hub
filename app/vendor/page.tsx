@@ -41,6 +41,42 @@ export default function VendorDashboard() {
         }
     }, [currentUser, isDataLoading, router]);
 
+    const handleLogout = () => {
+        setCurrentUser(null);
+        router.push('/');
+    };
+
+    const startEdit = () => {
+        setEditValues({ ...activeStore });
+        setIsEditing(true);
+    };
+
+    const handleSave = () => {
+        if (activeStore) {
+            updateStore(activeStore.id, editValues);
+            setIsEditing(false);
+            alert('매장 정보가 성공적으로 수정되었습니다.');
+        }
+    };
+
+    const addTag = () => {
+        const tag = tempTag.trim();
+        if (tag && !editValues.keywords?.includes(tag)) {
+            setEditValues({
+                ...editValues,
+                keywords: [...(editValues.keywords || []), tag]
+            });
+        }
+        setTempTag('');
+    };
+
+    const removeTag = (tagToRemove: string) => {
+        setEditValues({
+            ...editValues,
+            keywords: editValues.keywords?.filter(t => t !== tagToRemove)
+        });
+    };
+
     if (isDataLoading || (!currentUser && isDataLoading)) {
         return <div className={styles.loading}>정보를 불러오는 중...</div>;
     }
@@ -128,39 +164,6 @@ export default function VendorDashboard() {
         );
     }
 
-    const startEdit = () => {
-        setEditValues({ ...activeStore });
-        setIsEditing(true);
-    };
-
-    const handleSave = () => {
-        updateStore(activeStore.id, editValues);
-        setIsEditing(false);
-        alert('매장 정보가 성공적으로 수정되었습니다.');
-    };
-
-    const handleLogout = () => {
-        setCurrentUser(null);
-        router.push('/');
-    };
-
-    const addTag = () => {
-        const tag = tempTag.trim();
-        if (tag && !editValues.keywords?.includes(tag)) {
-            setEditValues({
-                ...editValues,
-                keywords: [...(editValues.keywords || []), tag]
-            });
-        }
-        setTempTag('');
-    };
-
-    const removeTag = (tagToRemove: string) => {
-        setEditValues({
-            ...editValues,
-            keywords: editValues.keywords?.filter(t => t !== tagToRemove)
-        });
-    };
 
     return (
         <div className={styles.vendorContainer}>

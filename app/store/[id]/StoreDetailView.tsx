@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Store, CATEGORY_LABELS, UserProfile } from '@/types';
+import { Store, CATEGORY_LABELS, Profile as UserProfile } from '@/types';
 import { 
   MapPin, 
   Phone, 
