@@ -235,7 +235,7 @@
 @keyframes contentFadeUp {
   0% { 
     opacity: 0; 
-    transform: translateY(20px);
+    transform: translateY(0);
   }
   100% { 
     opacity: 1; 
@@ -306,31 +306,29 @@
 
 .titleHighlight {
   display: inline-block;
-  /* Elegant & Deep Gradient: Ocean Blue -> Lavender -> Soft Shine -> Rose -> Purple */
+  /* Fixed Gradient: No 'sliding' background */
   background: linear-gradient(
     to right, 
     #60a5fa 0%, 
-    #818cf8 25%, 
-    #ffffff 50%, /* Soft Pearlescent Shine */
-    #f472b6 75%,
-    #60a5fa 100%
+    #818cf8 35%, 
+    #ffffff 50%, /* Static shine position */
+    #f472b6 65%,
+    #c084fc 100%
   );
-  background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  /* Slower, more subtle animation (10s) */
-  animation: colorfulGradient 10s linear infinite;
+  /* Shift colors in place using hue-rotate for an 'ethereal' feel */
+  animation: staticColorShift 8s ease-in-out infinite;
   position: relative;
   -webkit-font-smoothing: antialiased;
-  /* Thin elegant stroke for definition */
   -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
-  /* Gentle glow */
   filter: drop-shadow(0 0 15px rgba(129, 140, 248, 0.25));
 }
 
-@keyframes colorfulGradient {
-  to { background-position: 200% center; }
+@keyframes staticColorShift {
+  0%, 100% { filter: hue-rotate(0deg) drop-shadow(0 0 15px rgba(129, 140, 248, 0.25)); }
+  50% { filter: hue-rotate(30deg) drop-shadow(0 0 20px rgba(244, 114, 182, 0.3)); }
 }
 
 .description {
