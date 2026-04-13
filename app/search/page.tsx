@@ -4,13 +4,13 @@ import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './search.module.css';
-import SearchBox from '@/components/SearchBox';
+import Header from '@/components/Header';
 import { Store, CATEGORY_LABELS } from '@/types';
 import { MapPin, Phone, ExternalLink, CheckCircle2, Map as MapIcon, List, Navigation } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 
 function SearchResults() {
-  const { stores } = useData();
+  const { stores, t } = useData();
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
@@ -19,27 +19,21 @@ function SearchResults() {
     // Only show verified stores in search results
     if (!store.is_verified) return false;
 
+    const lowerQuery = query.toLowerCase();
+    
     return (
-      store.store_name.includes(query) || 
-      store.keywords.some(k => k.includes(query)) ||
-      store.sub_category?.includes(query) ||
-      (store.category && CATEGORY_LABELS[store.category]?.includes(query))
+      store.store_name.toLowerCase().includes(lowerQuery) || 
+      store.keywords.some(k => k.toLowerCase().includes(lowerQuery)) ||
+      store.sub_category?.toLowerCase().includes(lowerQuery) ||
+      (store.category && CATEGORY_LABELS[store.category]?.toLowerCase().includes(lowerQuery)) ||
+      (store.road_address && store.road_address.toLowerCase().includes(lowerQuery)) ||
+      (store.location && store.location.toLowerCase().includes(lowerQuery))
     );
   });
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <Link href="/" className={styles.logo}>
-            <img src="/images/logo.png" alt="Logo" style={{ height: '32px', width: '32px', objectFit: 'contain', marginRight: '0.5rem', borderRadius: '6px' }} />
-            ANSAN MARKET HUB
-          </Link>
-          <div className={styles.searchBar}>
-            <SearchBox initialValue={query} />
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className={styles.main}>
         <div className={styles.toolRow}>
@@ -90,7 +84,14 @@ function SearchResults() {
                       <div className={styles.info}>
                         <div className={styles.infoRow}>
                           <MapPin size={16} />
-                          <span>{store.road_address} ({store.location})</span>
+                          <span>
+                            {store.road_address}
+                            {(store.location || (store.description?.match(/\[상세위치: (.*?)\]/)?.[1])) && (
+                              <span style={{ marginLeft: '0.3rem', fontWeight: 600 }}>
+                                ({store.location || (store.description?.match(/\[상세위치: (.*?)\]/)?.[1])})
+                              </span>
+                            )}
+                          </span>
                         </div>
                         {store.phone && (
                           <div className={styles.infoRow}>
@@ -144,10 +145,10 @@ function SearchResults() {
                     <h3>선택된 구역 ({results.length})</h3>
                     <div className={styles.sidebarList}>
                         {results.map(s => (
-                            <div key={s.id} className={styles.sidebarItem}>
-                                <strong>{s.store_name}</strong>
-                                <span>{s.location}</span>
-                            </div>
+                                <div key={s.id} className={styles.sidebarItem}>
+                                    <strong>{s.store_name}</strong>
+                                    <span>{s.location || s.road_address}</span>
+                                </div>
                         ))}
                     </div>
                 </div>

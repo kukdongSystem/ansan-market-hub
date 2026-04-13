@@ -1,22 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import { DataProvider } from "@/context/DataContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "안산유통상가 검색 플랫폼 '이거어디?' | 공식 통합 마켓 허브",
-    template: "%s | 이거어디? 안산유통단지"
+    default: "이거 어디서 팔아요? | 안산 1차 유통상가 스마트 검색 플랫폼",
+    template: "%s | 이거 어디서 팔아요? 안산유통단지"
   },
   description: "안산유통상가의 모든 상점을 한눈에! 공구, 전기, 배관, 잡화 등 단지 내 1만여 상점을 쉽고 빠르게 검색하고 위치를 확인하세요.",
   keywords: ["안산유통상가", "안산유통단지", "이거어디", "공구상가", "유통단지 검색", "안산 마켓허브", "안산 공구", "기계 부품 검색"],
@@ -25,9 +21,9 @@ export const metadata: Metadata = {
     type: "website",
     locale: "ko_KR",
     url: "https://ansan-market-hub.vercel.app",
-    title: "안산유통상가 통합 검색 플랫폼 '이거어디?'",
+    title: "이거 어디서 팔아요? | 안산 1차 유통상가 스마트 검색 플랫폼",
     description: "공구부터 기계 부품까지, 안산유통상가의 모든 정보를 실시간으로 확인하세요.",
-    siteName: "이거어디?",
+    siteName: "이거 어디서 팔아요?",
     images: [
       {
         url: "/images/logo.png",
@@ -39,7 +35,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "안산유통상가 통합 검색 플랫폼 '이거어디?'",
+    title: "이거 어디서 팔아요? | 안산 1차 유통상가 스마트 검색 플랫폼",
     description: "내 손안의 안산유통상가, 위치와 상점 정보를 한 번에!",
   },
   verification: {
@@ -59,7 +55,7 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${outfit.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
           <DataProvider>

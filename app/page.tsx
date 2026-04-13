@@ -6,7 +6,7 @@ import Link from 'next/link';
 import styles from './page.module.css';
 import { Hammer, Zap, ShieldCheck, Utensils, UploadCloud, UserPlus, LogIn, Settings, Package, Cog, Building2, Beaker, Monitor, Globe, ChevronDown, Menu, X } from 'lucide-react';
 import SearchBox from '@/components/SearchBox';
-import { translations, Language } from '@/constants/translations';
+import Header from '@/components/Header';
 import { useData } from '@/context/DataContext';
 import { CATEGORY_LABELS, StoreCategory } from '@/types';
 
@@ -74,21 +74,11 @@ const MAIN_CATEGORIES: StoreCategory[] = [
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPageDragging, setIsPageDragging] = useState(false);
-  const [lang, setLang] = useState<Language>('ko');
-  const [isLanOpen, setIsLanOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [country, setCountry] = useState<string | null>(null);
-  const { todayVisitorCount } = useData();
+  const { todayVisitorCount, t, lang } = useData();
   const router = useRouter();
 
-  const t = translations[lang] as any;
-
   useEffect(() => {
-    // 1. Language Detection
-    const browserLang = navigator.language.split('-')[0];
-    if (Object.keys(translations).includes(browserLang)) {
-      setLang(browserLang as Language);
-    }
 
     // 2. Country Detection (IP Geo-filtering)
     fetch('https://ipapi.co/json/')
@@ -134,101 +124,68 @@ export default function Home() {
           </div>
       )}
 
-      <nav className={styles.nav}>
-        <div className={styles.navContent}>
-          <div className={styles.wrapper}>
-             <Link href="/" className={styles.logo}>
-                <img src="/images/logo.png" alt="Logo" className={styles.logoImage} />
-                <div className={styles.logoTextContainer}>
-                  <span className={styles.logoTitle}>이거 어디에서 팔아요?</span>
-                  <span className={styles.logoSubtitle}>안산1차유통상가</span>
-                </div>
-             </Link>
-          </div>
-
-          <button className={styles.mobileMenuBtn} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-            {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
-          </button>
-          
-          <div className={`${styles.navLinks} ${isMobileMenuOpen ? styles.navLinksOpen : ''}`}>
-            {/* Admin Buttons - Only visible in Korea */}
-            {isKorea && (
-              <>
-                <Link href="/register" className={styles.registerBtn}>
-                    <UserPlus size={16} /> <span className={styles.btnText}>{t.register}</span>
-                </Link>
-                <Link href="/login" className={styles.loginBtn}>
-                    <LogIn size={16} /> <span className={styles.btnText}>{t.login}</span>
-                </Link>
-              </>
-            )}
-
-            {/* Language Selector */}
-            <div className={styles.langSelector}>
-              <button 
-                className={styles.langBtn}
-                onClick={() => setIsLanOpen(!isLanOpen)}
-              >
-                <Globe size={18} />
-                <span>{LAN_LABELS[lang]}</span>
-                <ChevronDown size={14} style={{ transform: isLanOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
-              </button>
-              {isLanOpen && (
-                <div className={styles.langDropdown}>
-                  {(Object.keys(LAN_LABELS) as Language[]).map((l) => (
-                    <button 
-                      key={l}
-                      onClick={() => { setLang(l); setIsLanOpen(false); }}
-                      className={l === lang ? styles.activeLang : ''}
-                    >
-                      {LAN_LABELS[l]}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       <header className={styles.hero}>
         <Link href="/login" className={styles.adminShortcut} title="관리자 전용">
             <Settings size={18} />
         </Link>
+        
+        {/* Dynamic Prism Engine: Changes colors per slide */}
+        <div className={styles.prismContainer} style={{ 
+          '--prism-color-1': currentSlide === 0 ? '#0ea5e9' : currentSlide === 1 ? '#f59e0b' : currentSlide === 2 ? '#ec4899' : currentSlide === 3 ? '#10b981' : '#6366f1',
+          '--prism-color-2': currentSlide === 0 ? '#6366f1' : currentSlide === 1 ? '#ef4444' : currentSlide === 2 ? '#8b5cf6' : currentSlide === 3 ? '#3b82f6' : '#ec4899'
+        } as any}>
+          <div className={styles.meshGradient}></div>
+          <div className={`${styles.decoration} ${styles.decoration1}`}></div>
+          <div className={`${styles.decoration} ${styles.decoration2}`}></div>
+        </div>
 
         {HERO_IMAGES.map((image, index) => (
           <div 
             key={index}
             className={`${styles.heroSlide} ${index === currentSlide ? styles.active : ''}`}
-            style={{ backgroundImage: `url(${image.url})` }}
           >
+            {/* Background Layer: Only this layer scales to keep text sharp */}
+            <div 
+              className={styles.heroBg} 
+              style={{ backgroundImage: `url(${image.url})` }}
+            ></div>
             <div className={styles.heroOverlay}></div>
+            
+            {/* Slide-specific text content: Independent of scaling */}
+            <div className={styles.heroContent} style={{ opacity: index === currentSlide ? 1 : 0, pointerEvents: index === currentSlide ? 'auto' : 'none' }}>
+              <div className={styles.badge}>{t.badge}</div>
+              <h1 className={styles.title}>
+                {t.heroPrefix} <br />
+                <div className={styles.titleHighlight}>
+                  <span>
+                    {t[image.titleKey as string]}
+                  </span>
+                </div>
+              </h1>
+              <p className={styles.description}>
+                {t[image.descKey as string]}
+              </p>
+            </div>
           </div>
         ))}
-        
-        <div className={styles.heroContent}>
-          <div className={styles.badge}>{t.badge}</div>
-          <h1 className={styles.title}>
-            {t.heroPrefix} <br />
-            <span>
-              {t[HERO_IMAGES[currentSlide].titleKey as string]}
-            </span>
-          </h1>
-          <p className={styles.description}>
-            {t[HERO_IMAGES[currentSlide].descKey as string]}
-          </p>
+
+        {/* Persistent UI Elements (SearchBox & visitorBadge) - Stays fixed and focused */}
+        <div className={styles.heroPersistentUI}>
           <div className={styles.searchWrapper}>
             <SearchBox 
               placeholder={t.searchPlaceholder} 
               placeholders={[t.searchPlaceholder, t.searchPlaceholderAlt]}
             />
           </div>
+          
           <div className={styles.visitorBadge}>
             <span className={styles.pulseDot}></span>
-            <span>현재 <strong>{todayVisitorCount.toLocaleString()}명</strong>의 사용자가 검색 서비스를 이용 중입니다</span>
+            <span>최근 <strong>{todayVisitorCount.toLocaleString()}명</strong>의 사용자가 활발히 매장을 찾고 있습니다</span>
           </div>
         </div>
-
+        
         <div className={styles.slideIndicators}>
           {HERO_IMAGES.map((_, index) => (
             <button 
@@ -238,6 +195,10 @@ export default function Home() {
             />
           ))}
         </div>
+        
+        {/* Decorative Floating Elements */}
+        <div className={`${styles.decoration} ${styles.decoration1}`}></div>
+        <div className={`${styles.decoration} ${styles.decoration2}`}></div>
       </header>
       
       <main className={styles.main}>

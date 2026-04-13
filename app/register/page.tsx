@@ -92,73 +92,39 @@ export default function RegisterPage() {
 
         if (!userId) throw new Error('사용자 인증 정보를 가져올 수 없습니다.');
 
-        // 2. 프로필 및 매장 정보 등록 (계정이 이미 있어도 정보는 업데이트/추가)
+        // 2. 프로필 등록
         try {
-            await supabase.from('profiles').upsert([{
+            const { error: profileError } = await supabase.from('profiles').upsert([{
                 id: userId,
-                role: 'vendor', // 일반 업체로 등록 (기존 부관리자 권한은 유지될 수 있도록 DB 설정 필요 가능성 있으나 로직상 진행)
-                unit_info: `${formData.dong} ${formData.ho}`
-            }], { onConflict: 'id' });
+                role: 'vendor',
+                unit_info: `${formData.dong} ${formData.ho}`,
+                display_name: formData.storeName
+            }]);
+            if (profileError) console.error("Profile creation error:", profileError);
         } catch (e) {
-            console.warn("프로필 업데이트 생략");
+            console.error("Profile update failed:", e);
         }
 
-        // 매장 정보 저장
+        // 3. 매장 정보 저장 (DB 규격 준수: name, owner_id)
         const storeData: any = {
-            vendor_id: userId,
-            store_name: formData.storeName,
+            owner_id: userId,
+            name: formData.storeName,
             category: formData.category as StoreCategory,
             road_address: currentAddress,
-            location: `${formData.dong} ${formData.ho}`,
-            description: `${formData.storeName} - 신규 신청 매장입니다.`,
-            is_verified: false,
-            keywords: [formData.storeName, formData.category]
+            location: `${formData.dong} ${formData.ho}`, // 정확한 필드 연동을 위해 추가
+            description: `[상세위치: ${formData.dong} ${formData.ho}]\n[키워드: ${formData.storeName}, ${formData.category}]\n\n신규 입점 신청 매장입니다.`,
+            is_verified: false
         };
 
-        // 💡 [개선된 등록 로직] 컬럼 미스매치(location, keywords 등)를 자동으로 해결합니다.
-        const insertStoreWithFallback = async (data: any): Promise<any> => {
-            const { error } = await supabase.from('stores').insert([data]);
-            
-            if (error && error.message.includes('column')) {
-                console.warn(`DB 컬럼 에러 발견 (${error.message}). 필터링 후 재시도합니다.`);
-                
-                const filteredData = { ...data };
-                let fallbackDesc = data.description || '';
-
-                if (error.message.includes('location') && 'location' in filteredData) {
-                    fallbackDesc += `\n[위치: ${filteredData.location}]`;
-                    delete filteredData.location;
-                }
-                
-                if (error.message.includes('keywords') && 'keywords' in filteredData) {
-                    fallbackDesc += `\n[태그: ${filteredData.keywords.join(', ')}]`;
-                    delete filteredData.keywords;
-                }
-
-                // If no columns were removed but still error, it might be another column
-                if (Object.keys(filteredData).length === Object.keys(data).length) {
-                    throw error; // Unhandled column error
-                }
-
-                return insertStoreWithFallback({
-                    ...filteredData,
-                    description: fallbackDesc.trim()
-                });
-            }
-            
-            if (error) throw error;
-            return { success: true };
-        };
-
-        try {
-            await insertStoreWithFallback(storeData);
-            alert('✅ 입점 신청이 완료되었습니다!\n관리자 승인 후 서비스 이용이 가능합니다.');
-            router.push('/login');
-        } catch (sError: any) {
-            console.error('Store Insert Error:', sError);
-            alert(`❌ 매장 정보 등록 실패: ${sError.message}\n(계정은 생성되었으니 나중에 대시보드에서 등록해 주세요.)`);
-            router.push('/login');
+        const { error: storeError } = await supabase.from('stores').insert([storeData]);
+        
+        if (storeError) {
+            console.error('Store Insert Error:', storeError);
+            throw new Error(`매장 정보 등록 실패: ${storeError.message}`);
         }
+
+        alert('✅ 입점 신청이 완료되었습니다!\n관리자 승인 후 서비스 이용이 가능합니다.');
+        router.push('/login');
     } catch (err: any) {
         console.error("최종 에러:", err);
         alert(err.message || '처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');

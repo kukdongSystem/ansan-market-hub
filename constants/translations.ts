@@ -17,7 +17,7 @@ export const translations = {
     register: '업체 신규 등록',
     login: '파트너 로그인',
     heroPrefix: '안산유통상가',
-    badge: '안산유통상가 입점주를 위한 통합 마켓 허브',
+    badge: '안산 1차 유통상가 스마트 검색 플랫폼',
     dropText: '사진을 여기에 놓으세요',
     dropDesc: '안산유통상가의 전문 매장을 즉시 찾아드립니다.',
     categories: '다양한 상업 카테고리',
@@ -42,7 +42,7 @@ export const translations = {
     statsStores: '입점 업체',
     statsFandB: '식음료 시설',
     statsSearch: '통합 검색',
-    footerDesc: '© 2026 안산유통상가 입점주를 위한 공식 통합 탐색 서비스. All rights reserved.',
+    footerDesc: '© 2026 안산 1차 유통상가 스마트 검색 플랫폼. All rights reserved.',
     address: '경기도 안산시 단원구 산단로 326 / 산단로 412 (안산유통상가)',
   },
   en: {

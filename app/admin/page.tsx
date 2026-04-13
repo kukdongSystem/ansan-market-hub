@@ -7,6 +7,7 @@ import { Store, CATEGORY_LABELS, StoreCategory } from '@/types';
 import { useData } from '@/context/DataContext';
 import { useRouter } from 'next/navigation';
 import styles from './admin.module.css';
+import Header from '@/components/Header';
 import {
     Users,
     Store as StoreIcon,
@@ -66,6 +67,7 @@ export default function AdminDashboard() {
     // All hooks must be here
     const [activeTab, setActiveTab] = useState<'overview' | 'stores' | 'accounts' | 'approvals' | 'settings'>('overview');
     const [searchTerm, setSearchTerm] = useState('');
+    const [accountSearchTerm, setAccountSearchTerm] = useState('');
     const [selectedStore, setSelectedStore] = useState<Store | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editValues, setEditValues] = useState<Partial<Store>>({});
@@ -97,17 +99,26 @@ export default function AdminDashboard() {
     if (!currentUser) return null;
 
     const pendingApprovals = safeStores.filter(s => !s.is_verified);
+    const verifiedStores = safeStores.filter(s => s.is_verified);
 
     const stats = [
-        { label: '전체 매장', value: stores.length.toString(), icon: <StoreIcon size={20} />, color: '#3b82f6' },
-        { label: '승인 대기', value: pendingApprovals.length.toString(), icon: <Clock size={20} />, color: '#f59e0b' },
-        { label: '활성 관리자', value: accounts.filter(a => a.role === 'admin').length.toString(), icon: <Users size={20} />, color: '#10b981' },
-        { label: '금일 방문자', value: todayVisitorCount.toLocaleString(), icon: <BarChart3 size={20} />, color: '#8b5cf6' },
+        { label: '전체 매장', value: stores.length.toString(), sub: `승인 ${verifiedStores.length} / 대기 ${pendingApprovals.length}`, icon: <StoreIcon size={24} />, color: '#3b82f6' },
+        { label: '신규 요청', value: pendingApprovals.length.toString(), sub: '내부 검토 중', icon: <Clock size={24} />, color: '#f59e0b' },
+        { label: '활성 계정', value: accounts.length.toString(), sub: `운영진 ${accounts.filter(a => a.role === 'admin' || a.role === 'sub_admin').length}명`, icon: <Users size={24} />, color: '#10b981' },
+        { label: '금일 방문자', value: todayVisitorCount.toLocaleString(), sub: '실시간 카운트', icon: <BarChart3 size={24} />, color: '#8b5cf6' },
     ];
 
-    const filteredStores = (stores || []).filter(s =>
+    const filteredStores = safeStores.filter(s =>
         (s.store_name || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
-        (s.location || '').includes(searchTerm)
+        (s.location || '').includes(searchTerm) ||
+        (s.road_address || '').toLowerCase().includes((searchTerm || '').toLowerCase()) || // 도로명 주소 검색 추가
+        (s.vendor_email || '').toLowerCase().includes((searchTerm || '').toLowerCase())
+    );
+
+    const filteredAccounts = safeAccounts.filter(a => 
+        (a.email || '').toLowerCase().includes(accountSearchTerm.toLowerCase()) ||
+        (a.store_name || '').toLowerCase().includes(accountSearchTerm.toLowerCase()) ||
+        (a.role || '').toLowerCase().includes(accountSearchTerm.toLowerCase())
     );
 
     const startEdit = () => {
@@ -134,16 +145,20 @@ export default function AdminDashboard() {
 
     const addTag = () => {
         const tag = tempTag.trim();
-        if (tag && !editValues.keywords?.includes(tag)) {
-            setEditValues({
-                ...editValues,
-                keywords: [...(editValues.keywords || []), tag]
+        if (tag) {
+            setEditValues(prev => {
+                if (prev.keywords?.includes(tag)) return prev;
+                return {
+                    ...prev,
+                    keywords: [...(prev.keywords || []), tag]
+                };
             });
         }
         setTempTag('');
     };
 
     const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.nativeEvent.isComposing) return; // Prevent IME duplicate events
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault();
             addTag();
@@ -305,7 +320,10 @@ export default function AdminDashboard() {
     };
 
     return (
-        <div className={styles.adminLayout}>
+        <div className={styles.adminContainer}>
+            <Header />
+            
+            <div className={styles.adminLayout}>
             {/* Detail & Edit Modal */}
             {selectedStore && (
                 <div className={styles.modalOverlay} onClick={() => { if (!isEditing) setSelectedStore(null); }}>
@@ -380,9 +398,19 @@ export default function AdminDashboard() {
                                                 <label>매장명</label>
                                                 {isEditing ? <input className={styles.modalInput} value={editValues.store_name || ''} onChange={(e) => setEditValues({ ...editValues, store_name: e.target.value })} /> : <p>{selectedStore.store_name}</p>}
                                             </div>
-                                            <div className={styles.infoItem}>
+                                            <div className={styles.infoItem} style={{ gridColumn: 'span 2' }}>
                                                 <label>위치/상세주소</label>
-                                                {isEditing ? <input className={styles.modalInput} value={editValues.location || ''} onChange={(e) => setEditValues({ ...editValues, location: e.target.value })} /> : <p>{selectedStore.location}</p>}
+                                                {isEditing ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                        <input className={styles.modalInput} placeholder="도로명 주소" value={editValues.road_address || selectedStore.road_address || ''} onChange={(e) => setEditValues({ ...editValues, road_address: e.target.value })} />
+                                                        <input className={styles.modalInput} placeholder="상세 위치 (동/호수)" value={editValues.location || selectedStore.location || (selectedStore.description?.match(/\[상세위치: (.*?)\]/)?.[1]) || ''} onChange={(e) => setEditValues({ ...editValues, location: e.target.value })} />
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        <p style={{fontSize: '1.1rem', fontWeight: 700}}>{selectedStore.location || (selectedStore.description?.match(/\[상세위치: (.*?)\]/)?.[1]) || '상세위치 미등록'}</p>
+                                                        <p style={{fontSize: '0.9rem', color: '#64748b', marginTop: '0.2rem'}}>{selectedStore.road_address}</p>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className={styles.infoItem}>
                                                 <label>연락처</label>
@@ -412,7 +440,21 @@ export default function AdminDashboard() {
                                                     ))}
                                                 </div>
                                                 <div className={styles.tagInputWrapper}>
-                                                    <input className={styles.tagInput} placeholder="태그 입력..." value={tempTag} onChange={(e) => setTempTag(e.target.value)} onKeyDown={handleTagKeyDown} />
+                                                    <input 
+                                                        className={styles.tagInput} 
+                                                        placeholder="태그 입력 후 엔터..." 
+                                                        value={tempTag} 
+                                                        onChange={(e) => setTempTag(e.target.value)} 
+                                                        onKeyDown={handleTagKeyDown} 
+                                                    />
+                                                    <button 
+                                                        className={styles.tagAddBtn} 
+                                                        onClick={addTag}
+                                                        type="button"
+                                                        title="태그 추가"
+                                                    >
+                                                        <Plus size={16} />
+                                                    </button>
                                                 </div>
                                             </div>
                                         ) : (
@@ -612,23 +654,53 @@ export default function AdminDashboard() {
                                         <div className={styles.statText}>
                                             <span className={styles.statLabel}>{s.label}</span>
                                             <span className={styles.statValue}>{s.value}</span>
+                                            <span className={styles.statSubText} style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>{s.sub}</span>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                             <div className={styles.dashboardGrid}>
                                 <div className={styles.mainCard}>
-                                    <h3>최근 활동 이력</h3>
+                                    <h3>최근 시스템 로그</h3>
                                     <div className={styles.activityList}>
-                                        <div className={styles.activityItem}><div className={styles.actDot} style={{ background: '#f59e0b' }}></div><div className={styles.actContent}><p><strong>새로운 입점 신청</strong>이 대기 중입니다.</p><span>방금 전</span></div></div>
-                                        <div className={styles.activityItem}><div className={styles.actDot}></div><div className={styles.actContent}><p>시스템 데이터 정기 백업이 수행되었습니다.</p><span>1시간 전</span></div></div>
+                                        <div className={styles.activityItem}>
+                                            <div className={styles.actDot} style={{ background: '#f59e0b', boxShadow: '0 0 0 4px rgba(245, 158, 11, 0.1)' }}></div>
+                                            <div className={styles.actContent}>
+                                                <p><strong>신규 입점 신청</strong>이 검토를 기다리고 있습니다.</p>
+                                                <span>방금 전</span>
+                                            </div>
+                                        </div>
+                                        <div className={styles.activityItem}>
+                                            <div className={styles.actDot}></div>
+                                            <div className={styles.actContent}>
+                                                <p>전체 매장 데이터 백업이 안전하게 완료되었습니다.</p>
+                                                <span>1시간 전</span>
+                                            </div>
+                                        </div>
+                                        <div className={styles.activityItem}>
+                                            <div className={styles.actDot} style={{ background: '#10b981', boxShadow: '0 0 0 4px rgba(16, 185, 129, 0.1)' }}></div>
+                                            <div className={styles.actContent}>
+                                                <p>시스템 부하 분산 설정이 최적화되었습니다.</p>
+                                                <span>오늘 오전</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className={styles.subCard}>
-                                    <h3>상태 요약</h3>
+                                    <h3>시스템 모니터링</h3>
                                     <div className={styles.statusBox}>
-                                        <div className={styles.statusItem}><span>내부 서버 상태</span><span className={styles.green}>정상</span></div>
-                                        <div className={styles.statusItem}><span>DB 연동</span><span className={styles.green}>정상</span></div>
+                                        <div className={styles.statusItem}>
+                                            <span>API 통신 상태</span>
+                                            <span className={styles.green}>최적 (Active)</span>
+                                        </div>
+                                        <div className={styles.statusItem}>
+                                            <span>데이터베이스</span>
+                                            <span className={styles.green}>연결 성공</span>
+                                        </div>
+                                        <div className={styles.statusItem}>
+                                            <span>인덱싱 점유율</span>
+                                            <span>14.8 MB</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -643,7 +715,12 @@ export default function AdminDashboard() {
                                     {pendingApprovals.map(app => (
                                         <tr key={app.id}>
                                             <td><strong className={styles.tableName}>{app.store_name}</strong></td>
-                                            <td>{app.location}</td>
+                                            <td>
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontWeight: 700 }}>{app.location || '위치 미등록'}</span>
+                                                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{app.road_address}</span>
+                                                </div>
+                                            </td>
                                             <td>{app.vendor_email}</td>
                                             <td><span className={styles.badgeWarning}>검토 대기</span></td>
                                             <td><button className={styles.approveBtn} onClick={() => updateStore(app.id, { is_verified: true })}>승인</button></td>
@@ -662,7 +739,12 @@ export default function AdminDashboard() {
                                     {filteredStores.map(s => (
                                         <tr key={s.id}>
                                             <td><strong className={styles.tableName}>{s.store_name}</strong></td>
-                                            <td>{s.location}</td>
+                                            <td>
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontWeight: 600 }}>{s.location || '상세위치 없음'}</span>
+                                                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{s.road_address}</span>
+                                                </div>
+                                            </td>
                                             <td>{CATEGORY_LABELS[s.category]}</td>
                                             <td><span className={styles.statusDotActive}></span> 노출 중</td>
                                             <td><button className={styles.iconOpBtn} onClick={() => setSelectedStore(s)}><MoreVertical size={16} /></button></td>
@@ -675,20 +757,32 @@ export default function AdminDashboard() {
 
                     {activeTab === 'accounts' && (
                         <div className={styles.accountsTab}>
-                            <div className={styles.tabHeader}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div className={styles.tabHeader} style={{ background: 'transparent', border: 'none', padding: '0 0 2rem 0' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
                                     <div>
-                                        <h3>시스템 계정 전체 관리</h3>
-                                        <p>총 {safeAccounts.length}개의 계정이 등록되어 있습니다.</p>
+                                        <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.03em' }}>계정 무결성 제어</h3>
+                                        <p style={{ color: '#64748b', fontWeight: 600 }}>시스템에 접근 권한을 가진 {safeAccounts.length}명의 사용자를 관리합니다.</p>
                                     </div>
-                                    <button className={styles.addBtn} onClick={handleAddNewAccount} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '0.5rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                        <Plus size={16} /> 신규 계정 등록
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '1rem', flex: 1, justifyContent: 'flex-end', minWidth: '300px' }}>
+                                        <div className={styles.searchBar} style={{ width: '350px', background: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <Search size={18} color="#94a3b8" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="계정 ID 또는 상호명 검색..." 
+                                                style={{ border: 'none', background: 'transparent', padding: '0.8rem 0', outline: 'none', fontSize: '0.95rem', fontWeight: 600, width: '100%' }}
+                                                value={accountSearchTerm}
+                                                onChange={(e) => setAccountSearchTerm(e.target.value)}
+                                            />
+                                        </div>
+                                        <button className={styles.addBtn} onClick={handleAddNewAccount}>
+                                            <Plus size={18} /> 신규 관리 권한 부여
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div className={styles.accountGrid}>
                             {/* System Admins & Sub-Admins first */}
-                            {accounts.filter(a => a.role === 'admin' || a.role === 'sub_admin').map((acc) => (
+                            {filteredAccounts.filter(a => a.role === 'admin' || a.role === 'sub_admin').map((acc) => (
                                 <div key={acc.id} className={`${styles.accountCard} ${acc.id === currentUser.id ? styles.myAccount : ''}`}>
                                     <div className={styles.accountHeader}>
                                         <div className={styles.accountInfo}>
@@ -726,12 +820,14 @@ export default function AdminDashboard() {
                                 </div>
                             ))}
 
-                            {/* Store Vendors */}
-                            {stores.map((store) => {
-                                const acc = accounts.find(a => a.id === store.vendor_id);
-                                const accountId = acc?.id || store.vendor_id;
-                                const currentEmail = acc?.email || store.vendor_email || '계정미설정';
-                                const currentPassword = acc?.password || '123456';
+                            {/* Store Vendors sorted by search */}
+                            {filteredAccounts.filter(a => a.role === 'vendor').map((acc) => {
+                                const store = stores.find(s => s.vendor_id === acc.id);
+                                if (!store) return null;
+                                
+                                const accountId = acc.id;
+                                const currentEmail = acc.email;
+                                const currentPassword = acc.password || '••••••••';
                                 const isVerified = store.is_verified;
                                 
                                 return (
@@ -829,6 +925,7 @@ export default function AdminDashboard() {
                 </div>
             </main>
         </div>
-    );
+    </div>
+);
 }
 

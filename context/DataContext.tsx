@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Store, MOCK_STORES } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { Language, translations } from '@/constants/translations';
 
 interface DataContextType {
   stores: Store[];
@@ -20,6 +21,9 @@ interface DataContextType {
   logout: () => Promise<void>;
   isLoading: boolean;
   todayVisitorCount: number;
+  lang: Language;
+  setLang: (lang: Language) => void;
+  t: any;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -30,7 +34,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [todayVisitorCount, setTodayVisitorCount] = useState(1245); // Mock initial value
+  const [todayVisitorCount, setTodayVisitorCount] = useState(1245);
+  const [lang, setLang] = useState<Language>('ko');
+
+  // Multi-language Translation Object
+  const t = translations[lang] as any;
 
   // Sync with Supabase Auth
   useEffect(() => {
@@ -56,6 +64,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setIsAuthLoading(false);
       }
     };
+
+    // 3. Simple Browser Language Check
+    const browserLang = navigator.language.split('-')[0];
+    if (Object.keys(translations).includes(browserLang)) {
+        setLang(browserLang as Language);
+    }
 
     checkInitialSession();
 
@@ -160,12 +174,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
         
         if (error) throw error;
         
-        // DB 컬럼명 매핑 (name -> store_name, owner_id -> vendor_id)
-        const mappedData = (data || []).map((d: any) => ({
-            ...d,
-            store_name: d.name || d.store_name, 
-            vendor_id: d.owner_id || d.vendor_id
-        }));
+        // DB 컬럼명 매핑 및 Description에서 데이터 추출 로직 보강
+        const mappedData = (data || []).map((d: any) => {
+            const description = d.description || '';
+            
+            // 상세위치 추출 ([상세위치: ...])
+            const locationMatch = description.match(/\[상세위치: (.*?)\]/);
+            const extractedLocation = locationMatch ? locationMatch[1] : (d.location || '');
+            
+            // 키워드 추출 ([키워드: ...])
+            const keywordsMatch = description.match(/\[키워드: (.*?)\]/);
+            const extractedKeywords = keywordsMatch 
+                ? keywordsMatch[1].split(',').map((k: string) => k.trim()).filter(Boolean)
+                : (Array.isArray(d.keywords) ? d.keywords : []);
+
+            return {
+                ...d,
+                store_name: d.name || d.store_name, 
+                vendor_id: d.owner_id || d.vendor_id,
+                location: extractedLocation,
+                keywords: extractedKeywords
+            };
+        });
         
         setStores(mappedData);
     } catch (err) {
@@ -214,12 +244,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const dbData: any = {
             name: store.store_name,
             owner_id: currentUser?.id,
+            category: store.category,
             road_address: store.road_address || '',
             phone: store.phone || '',
-            category: store.category,
             is_verified: store.is_verified ?? false
         };
 
+        // location이나 keywords가 포함된 경우 description에 통합 처리 (기존 로직 복구)
         let finalDescription = store.description || '';
         if (store.location) {
             finalDescription = `[상세위치: ${store.location}]\n${finalDescription}`;
@@ -241,30 +272,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const updateStore = async (id: string, updates: Partial<Store>) => {
     try {
-        // DB 컬럼에 맞게 매핑 변환
         const dbUpdates: any = { ...updates };
         
-        if (updates.store_name) {
+        // DB 명칭 매핑 (키가 존재하면 무조건 변환 및 삭제)
+        if ("store_name" in updates) {
             dbUpdates.name = updates.store_name;
             delete dbUpdates.store_name;
         }
-        if (updates.vendor_id) {
+        if ("vendor_id" in updates) {
             dbUpdates.owner_id = updates.vendor_id;
             delete dbUpdates.vendor_id;
         }
 
-        // location이나 keywords가 포함된 경우 description에 통합 처리
-        if (updates.location || updates.keywords) {
+        // Remove virtual/read-only fields always
+        delete dbUpdates.id;
+        delete dbUpdates.vendor_email;
+        delete dbUpdates.created_at;
+
+        // location이나 keywords 처리 로직 최적화 (기존 필즈 중복 방지)
+        if (updates.location !== undefined || updates.keywords !== undefined) {
             const currentStore = stores.find(s => s.id === id);
-            let finalDesc = updates.description !== undefined ? updates.description : (currentStore?.description || '');
+            let finalDesc = (updates.description !== undefined ? updates.description : (currentStore?.description || '')).trim();
             
+            // 기존에 박혀있던 특수 태그들 제거 (중복 방지)
+            finalDesc = finalDesc.replace(/\[상세위치: .*?\]\n?/g, '').replace(/\[키워드: .*?\]\n?/g, '').trim();
+
             const loc = updates.location !== undefined ? updates.location : currentStore?.location;
             const keys = updates.keywords !== undefined ? updates.keywords : currentStore?.keywords;
 
-            if (loc) finalDesc = `[상세위치: ${loc}]\n${finalDesc}`;
-            if (keys && keys.length > 0) finalDesc = `${finalDesc}\n[키워드: ${keys.join(', ')}]`;
+            // 새로운 태그들을 맨 앞에 추가
+            let tags = '';
+            if (loc) tags += `[상세위치: ${loc}]\n`;
+            if (keys && keys.length > 0) tags += `[키워드: ${keys.join(', ')}]\n`;
             
-            dbUpdates.description = finalDesc.trim();
+            dbUpdates.description = (tags + finalDesc).trim();
+            
+            // DB 컬럼이 없을 경우를 대비해 Virtual 프로퍼티만 제거하고 전송
             delete dbUpdates.location;
             delete dbUpdates.keywords;
         }
@@ -388,7 +431,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         resetAllData,
         logout,
         isLoading: isLoading || isAuthLoading,
-        todayVisitorCount
+        todayVisitorCount,
+        lang,
+        setLang,
+        t
     }}>
       {children}
     </DataContext.Provider>

@@ -2,41 +2,36 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Home, ArrowLeft } from 'lucide-react';
-import styles from './login.module.css';
+import { Eye, EyeOff, ArrowLeft, ShieldCheck, Store as StoreIcon, Lock, Mail, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase, signInWithPasswordDirect } from '@/lib/supabase';
 import { useData } from '@/context/DataContext';
+import styles from './login.module.css';
 
 export default function LoginPage() {
-  const { currentUser, isLoading: isDataLoading, setCurrentUser } = useData();
+  const { currentUser, isLoading: isDataLoading, setCurrentUser, t } = useData();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const router = useRouter();
-
-  // Notice: We removed the auto-redirect to allow users to see their status or logout
-  // if they intended to login as a different account (e.g. Partner login)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setMessage('');
+    setErrorMsg('');
 
     try {
-        // 프로젝트가 휴면 상태일 경우를 대비해 넉넉하게 30초 타임아웃 설정
         const { user: authUser, error: signError } = await signInWithPasswordDirect(
           email,
           password,
-          30000
+          15000
         );
 
         if (signError) throw signError;
-        if (!authUser) throw new Error('세션을 가져오지 못했습니다.');
+        if (!authUser) throw new Error('인증 정보를 가져오지 못했습니다.');
 
-        // 1. Fetch profile to get role
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -45,7 +40,6 @@ export default function LoginPage() {
 
         const role = profile?.role || 'vendor';
 
-        // 2. Set user in context
         setCurrentUser({
           id: authUser.id,
           email: authUser.email,
@@ -53,29 +47,16 @@ export default function LoginPage() {
           role: role,
         });
 
-        // 로그인 성공 시 메시지 표시
-        setMessage('로그인 성공! 이동 중...');
-        
-        // 3. Conditional redirect
-        const destination = role === 'admin' ? '/admin' : '/vendor';
-        
-        setTimeout(() => {
-          router.push(destination);
-        }, 500);
+        // Redirect based on role
+        router.push(role === 'admin' ? '/admin' : '/vendor');
     } catch (err: any) {
         let msg = err.message || '로그인에 실패했습니다.';
-        if (msg === 'TIMEOUT') {
-             msg = '서버 응답이 없습니다. Supabase 프로젝트가 일시 정지 상태일 수 있습니다. 잠시 후 다시 시도하세요.';
-        } else if (msg.includes('Invalid login credentials')) {
+        if (msg.includes('Invalid login credentials')) {
              msg = '이메일 또는 비밀번호가 올바르지 않습니다.';
-        } else if (msg.includes('Email not confirmed')) {
-             msg = '이메일 인증이 완료되지 않았습니다. 메일함을 확인해 주세요.';
-        } else if (msg.includes('User not found')) {
-             msg = '가입되지 않은 이메일입니다.';
-        } else {
-             msg = msg || '네트워크 오류가 발생했습니다.';
+        } else if (msg === 'TIMEOUT') {
+             msg = '서버 응답 시간이 초과되었습니다. 다시 시도해 주세요.';
         }
-        setMessage(msg);
+        setErrorMsg(msg);
     } finally {
         setIsLoading(false);
     }
@@ -83,103 +64,107 @@ export default function LoginPage() {
 
   if (!isDataLoading && currentUser) {
       return (
-          <div className={styles.container}>
-              <div className={`${styles.card} animate-fade-in`}>
-                  <header className={styles.header}>
-                      <div className={styles.logo}>
-                          <img src="/images/logo.png" alt="Logo" style={{ height: '36px', width: '36px', objectFit: 'contain', marginRight: '0.5rem', borderRadius: '8px' }} />
-                          ANSAN MARKET HUB
-                      </div>
-                      <h1 style={{ marginTop: '1.5rem' }}>이미 로그인됨</h1>
-                      <p style={{ color: '#94a3b8' }}><b>{currentUser.email}</b> 계정으로 로그인되어 있습니다.</p>
-                  </header>
-                  
-                  <div className={styles.form} style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className={styles.screen}>
+              <div className={styles.premiumCard}>
+                   <div className={styles.iconCircle}>
+                      <ShieldCheck size={32} />
+                   </div>
+                   <h1>이미 접속 중입니다</h1>
+                   <p className={styles.sub}>이미 <strong>{currentUser.email}</strong> 계정으로 로그인되어 있습니다.</p>
+                   
+                   <div className={styles.actionGroup}>
                       <button 
                           onClick={() => router.push(currentUser.role === 'admin' ? '/admin' : '/vendor')}
-                          className={styles.loginBtn}
+                          className={styles.primaryBtn}
                       >
-                          대시보드로 이동
+                          대시보드 바로가기
                       </button>
                       <button 
                           onClick={async () => {
                               await supabase.auth.signOut();
                               window.location.reload();
                           }}
-                          className={styles.loginBtn}
-                          style={{ backgroundColor: 'transparent', border: '1px solid #475569', color: '#94a3b8' }}
+                          className={styles.secondaryBtn}
                       >
-                          로그아웃 후 다른 계정으로 로그인
+                          다른 계정으로 로그인
                       </button>
-                      <Link href="/" className={styles.homeLink} style={{ margin: '1rem auto 0' }}>
-                          <Home size={16} /> 메인으로 돌아가기
-                      </Link>
-                  </div>
+                   </div>
+                   <Link href="/" className={styles.backLink}>
+                      <ArrowLeft size={16} /> 메인으로 돌아가기
+                   </Link>
               </div>
           </div>
       );
   }
 
   return (
-    <div className={styles.container}>
-      <div className={`${styles.card} animate-fade-in`}>
-        <header className={styles.header}>
-          <Link href="/" className={styles.logoLink}>
-            <div className={styles.logo}>
-              <img src="/images/logo.png" alt="Logo" style={{ height: '36px', width: '36px', objectFit: 'contain', marginRight: '0.5rem', borderRadius: '8px' }} />
-              ANSAN MARKET HUB
-            </div>
-          </Link>
-          <h1>관리 시스템 로그인</h1>
-          <p>관리자 또는 입점주 계정으로 접속하세요.</p>
-          <Link href="/" className={styles.homeLink}>
-            <ArrowLeft size={16} /> 메인 페이지로 돌아가기
-          </Link>
-        </header>
+    <div className={styles.screen}>
+      <div className={styles.premiumCard}>
+        <Link href="/" className={styles.logoGroup}>
+          <div className={styles.logoBadge}>
+            <img src="/images/logo.png" alt="Logo" />
+          </div>
+          <h1>이거 어디에서 팔아요?</h1>
+          <p>안산유통상가 스마트 관리 시스템</p>
+        </Link>
+
+        <div className={styles.formHeader}>
+          <h2>로그인</h2>
+          <p>관리자 또는 파트너 계정으로 로그인하세요.</p>
+        </div>
 
         <form onSubmit={handleLogin} className={styles.form}>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>이메일 주소</label>
+          <div className={styles.field}>
+            <label><Mail size={14} /> 이메일 주소</label>
             <input 
               type="email" 
-              className={styles.input} 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="이메일을 입력하세요"
+              placeholder="example@store.com"
               required 
             />
           </div>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>비밀번호</label>
-            <div className={styles.passwordWrapper}>
+
+          <div className={styles.field}>
+            <label><Lock size={14} /> 비밀번호</label>
+            <div className={styles.inputWrapper}>
                 <input 
                   type={showPassword ? "text" : "password"} 
-                  className={styles.input} 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="비밀번호를 입력하세요"
+                  placeholder="••••••••"
                   required 
                 />
                 <button 
                     type="button" 
                     className={styles.eyeBtn}
                     onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
                 >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
             </div>
           </div>
-          <button type="submit" className={styles.loginBtn} disabled={isLoading}>
-            {isLoading ? '인증 중...' : '로그인'}
+
+          <button type="submit" className={styles.submitBtn} disabled={isLoading}>
+            {isLoading ? <Loader2 className={styles.spin} size={20} /> : '로그인'}
           </button>
         </form>
 
-        {message && <div className={styles.errorMessage}>{message}</div>}
+        {errorMsg && <div className={styles.errorBanner}>{errorMsg}</div>}
         
-        <div className={styles.footer}>
-          <p>© 2026 안산유통단지 AI 관제센터</p>
+        <div className={styles.cardFooter}>
+          <p>© 2026 안산유통단지 스마트 시스템</p>
+          <div className={styles.footerLinks}>
+            <Link href="/register">입점신청</Link>
+            <span className={styles.dot}>•</span>
+            <Link href="/">홈페이지</Link>
+          </div>
         </div>
+      </div>
+      
+      <div className={styles.bgDecoration}>
+         <div className={styles.blob1}></div>
+         <div className={styles.blob2}></div>
       </div>
     </div>
   );
