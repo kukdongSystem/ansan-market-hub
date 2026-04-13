@@ -45,11 +45,67 @@ export default function VendorDashboard() {
         return <div className={styles.loading}>정보를 불러오는 중...</div>;
     }
 
-    if (!currentUser || !activeStore) {
+    if (!currentUser) {
         return (
             <div className={styles.loading}>
-                <p>매장 정보를 찾을 수 없거나 접근 권한이 없습니다.</p>
+                <p>로그인이 필요한 서비스입니다.</p>
                 <Link href="/login" className={styles.logoutBtn} style={{ marginTop: '1rem' }}>로그인 페이지로</Link>
+            </div>
+        );
+    }
+
+    if (!activeStore) {
+        return (
+            <div className={styles.vendorContainer}>
+                <nav className={styles.topNav}>
+                    <Link href="/" className={styles.backLink}>
+                        <ArrowLeft size={18} /> 서비스 메인으로
+                    </Link>
+                    <div className={styles.navRight}>
+                        <span className={styles.userEmail}>{currentUser.email} ({currentUser.role === 'admin' ? '시스템 관리자' : currentUser.role === 'sub_admin' ? '부관리자' : '입점주'})</span>
+                        <button onClick={handleLogout} className={styles.logoutBtn}>
+                            <LogOut size={16} /> 로그아웃
+                        </button>
+                    </div>
+                </nav>
+                <div className={styles.mainContent}>
+                    <div className={adminStyles.modalContent} style={{ maxWidth: '600px', margin: '4rem auto', textAlign: 'center', padding: '3rem' }}>
+                        <StoreIcon size={48} color="#3b82f6" style={{ marginBottom: '1.5rem' }} />
+                        <h2 style={{ color: 'white', marginBottom: '1rem' }}>매장 정보가 등록되지 않았습니다</h2>
+                        <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>
+                            {currentUser.email} 계정에 연결된 매장 정보가 없습니다.<br/>
+                            관리/입점 활동을 위해 매장 정보를 먼저 등록해 주세요.
+                        </p>
+                        <button 
+                            className={styles.loginBtn} 
+                            onClick={() => {
+                                const storeName = prompt('매장명을 입력해주세요 (예: 극동계전)');
+                                if (!storeName) return;
+                                const location = prompt('매장 위치를 입력해주세요 (예: 19동 104호)');
+                                if (!location) return;
+                                
+                                // Create initial store
+                                const { supabase } = require('@/lib/supabase');
+                                supabase.from('stores').insert([{
+                                    vendor_id: currentUser.id,
+                                    vendor_email: currentUser.email,
+                                    store_name: storeName,
+                                    category: 'etc',
+                                    location: location,
+                                    keywords: [storeName],
+                                    description: `${storeName}입니다.`,
+                                    is_verified: false
+                                }]).then(({ error }: any) => {
+                                    if (error) alert('등록 중 오류가 발생했습니다: ' + error.message);
+                                    else window.location.reload();
+                                });
+                            }}
+                            style={{ padding: '0.8rem 2rem', fontSize: '1rem' }}
+                        >
+                            내 매장 정보 등록하기
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     }
