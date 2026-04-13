@@ -32,6 +32,69 @@ export default function VendorDashboard() {
     const [editValues, setEditValues] = useState<Partial<Store>>({});
     const [tempTag, setTempTag] = useState('');
 
+    const [showRegisterModal, setShowRegisterModal] = useState(false);
+    const [newStoreData, setNewStoreData] = useState({
+        storeName: '',
+        category: 'etc' as StoreCategory,
+        dong: '',
+        ho: '',
+        phone: ''
+    });
+
+    const handleRegisterStore = async () => {
+        if (!newStoreData.storeName || !newStoreData.dong || !newStoreData.ho) {
+            alert('⚠️ 모든 필수 정보를 입력해 주세요.');
+            return;
+        }
+
+        alert('⚙️ 매장 정보를 시스템에 안전하게 등록하고 있습니다.\n잠시만 기다려 주세요...');
+        
+        const { supabase } = require('@/lib/supabase');
+        const locationString = `${newStoreData.dong}동 ${newStoreData.ho}호`;
+        const initialStoreData: any = {
+            vendor_id: currentUser.id,
+            vendor_email: currentUser.email,
+            store_name: newStoreData.storeName,
+            category: newStoreData.category,
+            phone: newStoreData.phone,
+            is_verified: false,
+            description: `${newStoreData.storeName} - 신규 등록 매장\n(위치: ${locationString})`,
+            location: locationString,
+            keywords: [newStoreData.storeName, '신규']
+        };
+
+        const insertWithSafety = async (data: any): Promise<any> => {
+            const { error } = await supabase.from('stores').insert([data]);
+            if (error && error.message.includes('column')) {
+                const filteredData = { ...data };
+                let fallbackDesc = data.description || '';
+                
+                if (error.message.includes('location') && 'location' in filteredData) {
+                    delete filteredData.location;
+                }
+                if (error.message.includes('keywords') && 'keywords' in filteredData) {
+                    fallbackDesc += `\n[태그: ${filteredData.keywords.join(', ')}]`;
+                    delete filteredData.keywords;
+                }
+                
+                if (Object.keys(filteredData).length === Object.keys(data).length) throw error;
+                return insertWithSafety({ ...filteredData, description: fallbackDesc.trim() });
+            }
+            if (error) throw error;
+            return true;
+        };
+
+        try {
+            await insertWithSafety(initialStoreData);
+            alert('✅ 축하합니다! 매장 등록이 완료되었습니다.\n이제 대시보드에서 정보를 관리하실 수 있습니다.');
+            setShowRegisterModal(false);
+            window.location.reload();
+        } catch (err: any) {
+            console.error('등록 실패:', err);
+            alert(`❌ 등록 중 문제가 발생했습니다.\n\n오류: ${err.message || '데이터베이스 통신 오류'}`);
+        }
+    };
+
     // Find the store belonging to this vendor by id
     const activeStore = stores.find(s => s.vendor_id === currentUser?.id);
 
@@ -78,12 +141,12 @@ export default function VendorDashboard() {
     if (!activeStore) {
         return (
             <div className={styles.vendorContainer} style={{ backgroundColor: '#0f172a' }}>
-                <nav className={styles.topNav} style={{ borderBottom: '1px solid #1e293b' }}>
+                 <nav className={styles.topNav} style={{ borderBottom: '1px solid #1e293b' }}>
                     <Link href="/" className={styles.backLink} style={{ color: '#94a3b8' }}>
                         <ArrowLeft size={18} /> 서비스 메인으로
                     </Link>
                     <div className={styles.navRight}>
-                        <span className={styles.userEmail} style={{ color: '#f1f5f9' }}>{currentUser.email} (부관리자/입점주)</span>
+                        <span className={styles.userEmail} style={{ color: '#f1f5f9' }}>{currentUser.email} (입점 신청 중)</span>
                         <button onClick={handleLogout} className={styles.logoutBtn}>
                             <LogOut size={16} /> 로그아웃
                         </button>
@@ -100,73 +163,138 @@ export default function VendorDashboard() {
                         border: '4px solid #334155',
                         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
                     }}>
-                        <div style={{ backgroundColor: '#f59e0b', width: '100px', height: '100px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2.5rem' }}>
-                            <StoreIcon size={50} color="#0f172a" />
+                        <div style={{ backgroundColor: '#f59e0b', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem' }}>
+                            <Plus size={40} color="#0f172a" />
                         </div>
                         
-                        <h1 style={{ color: '#fbbf24', fontSize: '2.5rem', fontWeight: '900', marginBottom: '2rem', letterSpacing: '-0.025em' }}>
-                            매장 정보를 등록해 주세요!
+                        <h1 style={{ color: '#fbbf24', fontSize: '2.2rem', fontWeight: '900', marginBottom: '1.5rem' }}>
+                            매장 등록이 필요합니다
                         </h1>
                         
-                        <div style={{ backgroundColor: '#0f172a', padding: '2rem', borderRadius: '1.5rem', marginBottom: '3rem', textAlign: 'left', border: '1px solid #334155' }}>
-                            <p style={{ color: '#f8fafc', fontSize: '1.4rem', lineHeight: '1.6', fontWeight: '600' }}>
-                                📢 "{currentUser.email}" 님,<br/>
-                                아직 이곳에 등록된 매장이 없습니다.
-                            </p>
-                            <p style={{ color: '#cbd5e1', fontSize: '1.2rem', marginTop: '1rem', lineHeight: '1.5' }}>
-                                아래 버튼을 눌러 매장 이름과 위치를 입력하시면,<br/>
-                                즉시 매장 관리 대시보드를 사용하실 수 있습니다.
+                        <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '1.5rem', marginBottom: '2.5rem', textAlign: 'left', border: '1px solid #334155' }}>
+                            <p style={{ color: '#f8fafc', fontSize: '1.2rem', lineHeight: '1.6' }}>
+                                📢 "{currentUser.email}" 계정에 등록된 매장이 없습니다.<br/>
+                                <strong>안산유통상가 스마트 명부</strong>에 매장을 등록하고 대시보드를 활성화하세요!
                             </p>
                         </div>
 
                         <button 
                             className={styles.loginBtn} 
-                            onClick={() => {
-                                const storeName = prompt('🏢 [매장명 입력]\n\n어르신들도 알아보기 쉬운 매장 이름을 입력해 주세요.\n(예: 극동계전, 중앙상사)');
-                                if (!storeName) return;
-                                const location = prompt('📍 [위치 입력]\n\n상가 내 정확한 위치를 입력해 주세요.\n(예: 19동 104호, 2층 가-201)');
-                                if (!location) return;
-                                
-                                alert('⚙️ 매장 정보를 시스템에 안전하게 등록하고 있습니다.\n잠시만 기다려 주세요...');
-                                
-                                const { supabase } = require('@/lib/supabase');
-                                // Removing 'keywords' as it caused error in user's screenshot
-                                supabase.from('stores').insert([{
-                                    vendor_id: currentUser.id,
-                                    vendor_email: currentUser.email,
-                                    store_name: storeName,
-                                    category: 'etc',
-                                    location: location,
-                                    is_verified: false
-                                }]).then(({ error }: any) => {
-                                    if (error) {
-                                        console.error('DB Error:', error);
-                                        alert('❌ 등록 중 문제가 발생했습니다.\n\n오류: ' + (error.message || '알 수 없는 오류'));
-                                    }
-                                    else {
-                                        alert('✅ 축하합니다! 매장 등록이 완료되었습니다.\n새로운 대시보드로 이동합니다.');
-                                        window.location.reload();
-                                    }
-                                });
-                            }}
+                            onClick={() => setShowRegisterModal(true)}
                             style={{ 
-                                padding: '1.5rem 4rem', 
-                                fontSize: '1.5rem', 
+                                padding: '1.2rem 3rem', 
+                                fontSize: '1.3rem', 
                                 backgroundColor: '#fbbf24', 
                                 color: '#0f172a',
-                                fontWeight: '900',
-                                borderRadius: '1.2rem',
+                                fontWeight: '800',
+                                borderRadius: '1rem',
                                 width: '100%',
                                 cursor: 'pointer',
-                                transition: 'transform 0.2s',
                                 border: 'none',
-                                boxShadow: '0 10px 15px -3px rgba(251, 191, 36, 0.4)'
+                                transition: 'all 0.2s'
                             }}
                         >
-                            내 매장 지금 바로 등록하기
+                            내 매장 정보 입력하기 (정식 양식)
                         </button>
                     </div>
                 </div>
+
+                {/* Registration Modal (The Original Way) */}
+                {showRegisterModal && (
+                    <div className={adminStyles.modalOverlay} style={{ zIndex: 2000 }}>
+                        <div className={adminStyles.modalContent} style={{ maxWidth: '500px', width: '90%', borderRadius: '1.5rem', overflow: 'hidden', backgroundColor: '#fff' }}>
+                            <header className={adminStyles.modalHeader} style={{ background: '#f59e0b', color: '#0f172a', padding: '1.5rem' }}>
+                                <div>
+                                    <h2 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>새 매장 등록하기</h2>
+                                    <p style={{ color: 'rgba(15, 23, 42, 0.7)', margin: '0.2rem 0 0' }}>정확한 정보를 입력해 주세요.</p>
+                                </div>
+                                <button onClick={() => setShowRegisterModal(false)} className={adminStyles.closeBtn} style={{ color: '#0f172a', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                    <X size={24} />
+                                </button>
+                            </header>
+                            
+                            <div className={adminStyles.modalBody} style={{ padding: '2rem' }}>
+                                <div className={adminStyles.infoGrid} style={{ gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                                    <div className={adminStyles.infoItem}>
+                                        <label style={{ fontSize: '1rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.5rem' }}>매장명</label>
+                                        <input 
+                                            className={adminStyles.modalInput} 
+                                            placeholder="예: 극동계전, 중앙통상"
+                                            value={newStoreData.storeName}
+                                            onChange={e => setNewStoreData({...newStoreData, storeName: e.target.value})}
+                                            style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+                                        />
+                                    </div>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <div className={adminStyles.infoItem}>
+                                            <label style={{ fontSize: '1rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.5rem' }}>동 (상가 번호)</label>
+                                            <input 
+                                                className={adminStyles.modalInput} 
+                                                placeholder="예: 12"
+                                                value={newStoreData.dong}
+                                                onChange={e => setNewStoreData({...newStoreData, dong: e.target.value})}
+                                                style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+                                            />
+                                        </div>
+                                        <div className={adminStyles.infoItem}>
+                                            <label style={{ fontSize: '1rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.5rem' }}>호 (상세 위치)</label>
+                                            <input 
+                                                className={adminStyles.modalInput} 
+                                                placeholder="예: 104"
+                                                value={newStoreData.ho}
+                                                onChange={e => setNewStoreData({...newStoreData, ho: e.target.value})}
+                                                style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className={adminStyles.infoItem}>
+                                        <label style={{ fontSize: '1rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.5rem' }}>업종</label>
+                                        <select 
+                                            className={adminStyles.modalSelect}
+                                            value={newStoreData.category}
+                                            onChange={e => setNewStoreData({...newStoreData, category: e.target.value as StoreCategory})}
+                                            style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+                                        >
+                                            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                                                <option key={key} value={key}>{label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    
+                                    <div className={adminStyles.infoItem}>
+                                        <label style={{ fontSize: '1rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.5rem' }}>연락처 (선택)</label>
+                                        <input 
+                                            className={adminStyles.modalInput} 
+                                            placeholder="예: 031-491-xxxx"
+                                            value={newStoreData.phone}
+                                            onChange={e => setNewStoreData({...newStoreData, phone: e.target.value})}
+                                            style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className={adminStyles.modalFooter} style={{ padding: '1.5rem 2rem', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '1rem' }}>
+                                <button 
+                                    className={adminStyles.saveBtn} 
+                                    style={{ flex: 1, padding: '1rem', background: '#f59e0b', color: '#0f172a', fontWeight: '800', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}
+                                    onClick={handleRegisterStore}
+                                >
+                                    등록 완료하기
+                                </button>
+                                <button 
+                                    className={adminStyles.cancelBtn} 
+                                    style={{ flex: 0.5, padding: '1rem', background: '#e2e8f0', color: '#475569', fontWeight: '700', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}
+                                    onClick={() => setShowRegisterModal(false)}
+                                >
+                                    취소
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }

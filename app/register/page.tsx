@@ -115,21 +115,50 @@ export default function RegisterPage() {
             keywords: [formData.storeName, formData.category]
         };
 
-        const { error: sError } = await supabase.from('stores').insert([storeData]);
+        // 💡 [개선된 등록 로직] 컬럼 미스매치(location, keywords 등)를 자동으로 해결합니다.
+        const insertStoreWithFallback = async (data: any): Promise<any> => {
+            const { error } = await supabase.from('stores').insert([data]);
+            
+            if (error && error.message.includes('column')) {
+                console.warn(`DB 컬럼 에러 발견 (${error.message}). 필터링 후 재시도합니다.`);
+                
+                const filteredData = { ...data };
+                let fallbackDesc = data.description || '';
 
-        if (sError) {
-            // 컬럼 매칭 오류 등 예외 처리 (location 컬럼 유무 확인)
-            if (sError.message.includes('column')) {
-                const { location, ...restData } = storeData;
-                const { error: sError2 } = await supabase.from('stores').insert([restData]);
-                if (sError2) throw sError2;
-            } else {
-                throw sError;
+                if (error.message.includes('location') && 'location' in filteredData) {
+                    fallbackDesc += `\n[위치: ${filteredData.location}]`;
+                    delete filteredData.location;
+                }
+                
+                if (error.message.includes('keywords') && 'keywords' in filteredData) {
+                    fallbackDesc += `\n[태그: ${filteredData.keywords.join(', ')}]`;
+                    delete filteredData.keywords;
+                }
+
+                // If no columns were removed but still error, it might be another column
+                if (Object.keys(filteredData).length === Object.keys(data).length) {
+                    throw error; // Unhandled column error
+                }
+
+                return insertStoreWithFallback({
+                    ...filteredData,
+                    description: fallbackDesc.trim()
+                });
             }
-        }
+            
+            if (error) throw error;
+            return { success: true };
+        };
 
-        console.log("모든 프로세스 완료");
-        setIsSuccess(true);
+        try {
+            await insertStoreWithFallback(storeData);
+            alert('✅ 입점 신청이 완료되었습니다!\n관리자 승인 후 서비스 이용이 가능합니다.');
+            router.push('/login');
+        } catch (sError: any) {
+            console.error('Store Insert Error:', sError);
+            alert(`❌ 매장 정보 등록 실패: ${sError.message}\n(계정은 생성되었으니 나중에 대시보드에서 등록해 주세요.)`);
+            router.push('/login');
+        }
     } catch (err: any) {
         console.error("최종 에러:", err);
         alert(err.message || '처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');

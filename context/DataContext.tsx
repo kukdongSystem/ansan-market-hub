@@ -215,29 +215,64 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addStore = async (store: Store) => {
     try {
-        const { error } = await supabase.from('stores').insert([{
+        const initialData = {
             ...store,
-            vendor_id: currentUser?.id // Link to current user
-        }]);
-        if (error) throw error;
+            vendor_id: currentUser?.id
+        };
+
+        const insertWithSafety = async (data: any): Promise<any> => {
+            const { error } = await supabase.from('stores').insert([data]);
+            if (error && error.message.includes('column')) {
+                const filteredData = { ...data };
+                let fallbackDesc = data.description || '';
+                
+                if (error.message.includes('location') && 'location' in filteredData) {
+                    fallbackDesc += `\n[위치: ${filteredData.location}]`;
+                    delete filteredData.location;
+                }
+                if (error.message.includes('keywords') && 'keywords' in filteredData) {
+                    fallbackDesc += `\n[키워드: ${filteredData.keywords.join(', ')}]`;
+                    delete filteredData.keywords;
+                }
+                
+                if (Object.keys(filteredData).length === Object.keys(data).length) throw error;
+                return insertWithSafety({ ...filteredData, description: fallbackDesc.trim() });
+            }
+            if (error) throw error;
+            return true;
+        };
+
+        await insertWithSafety(initialData);
         await fetchStores(); // Refresh
-    } catch (err) {
+    } catch (err: any) {
         console.error("Add store failed:", err);
-        // Optimistic local update
+        alert(`매장 등록 실패: ${err.message || '데이터베이스 오류'}`);
         setStores(prev => [store, ...prev]);
     }
   };
 
   const updateStore = async (id: string, updates: Partial<Store>) => {
     try {
-        const { error } = await supabase
-            .from('stores')
-            .update(updates)
-            .eq('id', id);
-        if (error) throw error;
+        const updateWithSafety = async (data: any): Promise<any> => {
+            const { error } = await supabase.from('stores').update(data).eq('id', id);
+            
+            if (error && error.message.includes('column')) {
+                const filteredData = { ...data };
+                if (error.message.includes('location') && 'location' in filteredData) delete filteredData.location;
+                if (error.message.includes('keywords') && 'keywords' in filteredData) delete filteredData.keywords;
+                
+                if (Object.keys(filteredData).length === Object.keys(data).length) throw error;
+                return updateWithSafety(filteredData);
+            }
+            if (error) throw error;
+            return true;
+        };
+
+        await updateWithSafety(updates);
         await fetchStores();
-    } catch (err) {
+    } catch (err: any) {
         console.error("Update store failed:", err);
+        alert(`수정 실패: ${err.message}`);
         setStores(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
     }
   };
