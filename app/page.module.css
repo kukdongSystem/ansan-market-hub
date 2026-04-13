@@ -233,44 +233,86 @@
 }
 
 .title {
-  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-size: clamp(2.8rem, 10vw, 6rem); /* 더 역동적인 크기 변화 */
   font-weight: 950;
   color: #ffffff;
-  line-height: 1.05;
+  line-height: 0.95; /* 행간을 더 압축하여 밀도감 부여 */
   margin-bottom: 2.5rem;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.08em; /* 초정밀 로고급 커닝 */
   word-break: keep-all;
-  /* 가독성 및 선명도 최적화 */
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  /* 더 짙고 좁은 그림자로 선명한 외곽선 확보 */
-  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Cleaner, lighter shadow */
+  text-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
   z-index: 2;
+}
+
+.titlePrefix {
+  display: block;
+  font-size: 95%;
+  font-weight: 950;
+  margin-bottom: 0.1rem;
+  letter-spacing: -0.07em;
+  color: #ffffff;
+  /* Breathing Outer-Glow Animation */
+  animation: breathingGlow 4s ease-in-out infinite;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes breathingGlow {
+  0%, 100% {
+    text-shadow: 
+      0 0 8px rgba(255, 255, 255, 0.2),
+      0 0 15px rgba(255, 255, 255, 0.05);
+    transform: scale(1);
+  }
+  50% {
+    text-shadow: 
+      0 0 15px rgba(255, 255, 255, 0.4),
+      0 0 30px rgba(255, 255, 255, 0.15);
+    transform: scale(1.002); /* 스케일 변화도 극도로 미세하게 조정 */
+  }
+}
+
+@keyframes rainbowFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 400% 50%; }
 }
 
 .titleHighlight {
   display: inline-block;
-  /* Liquid Silk Gem: Soft blending with diffused pearlescent center */
+  /* Iridescent Electric Sapphire */
   background: linear-gradient(
     135deg, 
-    #7dd3fc 0%, 
-    #a5b4fc 40%, 
+    #38bdf8 0%, 
+    #818cf8 30%, 
     #ffffff 50%, 
-    #f472b6 60%,
-    #7dd3fc 100%
+    #0ea5e9 70%,
+    #6366f1 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  /* Very slow, mesmerizing movement */
-  animation: crystalShimmer 15s ease-in-out infinite;
-  position: relative;
-  -webkit-font-smoothing: antialiased;
-  /* Remove sharp stroke that looked like bones, use soft outer glow instead */
-  -webkit-text-stroke: 0;
-  /* Removed drop-shadow filters that caused smudging */
+  animation: crystalShimmer 5s ease-in-out infinite;
+  filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.4));
+}
+
+.titleAccent {
+  display: inline-block;
+  /* Cyberpunk Sun-flare Rose */
+  background: linear-gradient(
+    135deg,
+    #f43f5e 0%,
+    #fb7185 30%,
+    #ffffff 50%,
+    #d946ef 70%,
+    #ec4899 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: crystalShimmer 9s ease-in-out infinite alternate-reverse;
+  filter: drop-shadow(0 0 20px rgba(244, 63, 94, 0.4));
 }
 
 @keyframes crystalShimmer {

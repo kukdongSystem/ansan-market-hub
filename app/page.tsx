@@ -148,11 +148,25 @@ export default function Home() {
             <div className={styles.heroContent} style={{ opacity: index === currentSlide ? 1 : 0, pointerEvents: index === currentSlide ? 'auto' : 'none' }}>
               <div className={styles.badge}>{t.badge}</div>
               <h1 className={styles.title}>
-                {t.heroPrefix}
-                <br />
-                <span className={styles.titleHighlight}>
-                  {t[image.titleKey as string]}
-                </span>
+                <span className={styles.titlePrefix}>{t.heroPrefix}</span>
+                {(() => {
+                  const fullTitle = t[image.titleKey as string] || '';
+                  const words = fullTitle.split(' ');
+                  if (words.length <= 1) return <span className={styles.titleHighlight}>{fullTitle}</span>;
+                  
+                  // Split into two parts for different effects
+                  const mid = Math.ceil(words.length / 2);
+                  const firstPart = words.slice(0, mid).join(' ');
+                  const secondPart = words.slice(mid).join(' ');
+                  
+                  return (
+                    <>
+                      <span className={styles.titleHighlight}>{firstPart}</span>
+                      {' '}
+                      <span className={styles.titleAccent}>{secondPart}</span>
+                    </>
+                  );
+                })()}
               </h1>
               <p className={styles.description}>
                 {t[image.descKey as string]}
