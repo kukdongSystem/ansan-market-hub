@@ -158,12 +158,10 @@ export default function Home() {
             <div className={styles.heroContent} style={{ opacity: index === currentSlide ? 1 : 0, pointerEvents: index === currentSlide ? 'auto' : 'none' }}>
               <div className={styles.badge}>{t.badge}</div>
               <h1 className={styles.title}>
-                {t.heroPrefix} <br />
-                <div className={styles.titleHighlight}>
-                  <span>
-                    {t[image.titleKey as string]}
-                  </span>
-                </div>
+                <span className={styles.titleHighlight}>
+                  {t.heroPrefix} <br />
+                  {t[image.titleKey as string]}
+                </span>
               </h1>
               <p className={styles.description}>
                 {t[image.descKey as string]}
