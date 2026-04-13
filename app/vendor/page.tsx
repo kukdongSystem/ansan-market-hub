@@ -53,29 +53,14 @@ export default function VendorDashboard() {
 
     const handleSave = () => {
         if (activeStore) {
-            updateStore(activeStore.id, editValues);
+            // Only update fields that exist in the DB (excluding keywords)
+            const { keywords, ...saveData } = editValues as any;
+            updateStore(activeStore.id, saveData);
             setIsEditing(false);
             alert('매장 정보가 성공적으로 수정되었습니다.');
         }
     };
 
-    const addTag = () => {
-        const tag = tempTag.trim();
-        if (tag && !editValues.keywords?.includes(tag)) {
-            setEditValues({
-                ...editValues,
-                keywords: [...(editValues.keywords || []), tag]
-            });
-        }
-        setTempTag('');
-    };
-
-    const removeTag = (tagToRemove: string) => {
-        setEditValues({
-            ...editValues,
-            keywords: editValues.keywords?.filter(t => t !== tagToRemove)
-        });
-    };
 
     if (isDataLoading || (!currentUser && isDataLoading)) {
         return <div className={styles.loading}>정보를 불러오는 중...</div>;
@@ -340,7 +325,7 @@ export default function VendorDashboard() {
                                             <label>인증 상태</label>
                                             <p>
                                                 {activeStore.is_verified ? (
-                                                    <span className={styles.verifiedText}><CheckCircle2 size={14} /> 인증 완료 된 매장</span>
+                                                    <span className={styles.verifiedText}><CheckCircle2 size={14} /> 인증 완료</span>
                                                 ) : (
                                                     <span className={styles.pendingText}><Clock size={14} /> 승인 대기 중</span>
                                                 )}
@@ -350,37 +335,20 @@ export default function VendorDashboard() {
                                 </section>
 
                                 <section className={adminStyles.detailSection}>
-                                    <h4><Plus size={16} /> 취급 품목 및 키워드</h4>
+                                    <h4><Plus size={16} /> 매장 상세 소개</h4>
                                     {isEditing ? (
-                                        <div className={adminStyles.tagInputContainer}>
-                                            <div className={adminStyles.tagListEdit}>
-                                                {editValues.keywords?.map((t, idx) => (
-                                                    <span key={idx} className={adminStyles.modalTagEdit}>
-                                                        #{t}
-                                                        <button onClick={() => removeTag(t)} className={adminStyles.tagRemoveBtn}>
-                                                            <X size={12} />
-                                                        </button>
-                                                    </span>
-                                                ))}
-                                            </div>
-                                            <div className={adminStyles.tagInputWrapper}>
-                                                <input
-                                                    className={adminStyles.tagInput}
-                                                    placeholder="키워드 입력..."
-                                                    value={tempTag}
-                                                    onChange={(e) => setTempTag(e.target.value)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && addTag()}
-                                                />
-                                                <button className={adminStyles.tagAddBtn} onClick={addTag}>
-                                                    <Plus size={16} />
-                                                </button>
-                                            </div>
-                                        </div>
+                                        <textarea
+                                            className={adminStyles.modalInput}
+                                            style={{ width: '100%', minHeight: '120px', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #cbd5e1', fontSize: '1rem', outline: 'none' }}
+                                            value={editValues.description || ''}
+                                            onChange={(e) => setEditValues({ ...editValues, description: e.target.value })}
+                                            placeholder="매장의 특징이나 주요 취급 품목을 자세히 적어주세요. (예: 삼성 전동공구 대리점, 각종 볼트 제작)"
+                                        />
                                     ) : (
-                                        <div className={adminStyles.tagList}>
-                                            {activeStore.keywords?.map((t, idx) => (
-                                                <span key={idx} className={adminStyles.modalTag}>#{t}</span>
-                                            ))}
+                                        <div style={{ backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #f1f5f9' }}>
+                                            <p style={{ lineHeight: '1.7', color: '#475569', fontSize: '1.1rem', whiteSpace: 'pre-wrap' }}>
+                                                {activeStore.description || '아직 등록된 매장 설명이 없습니다.'}
+                                            </p>
                                         </div>
                                     )}
                                 </section>
