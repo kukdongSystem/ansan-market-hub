@@ -47,7 +47,7 @@ export default function VendorDashboard() {
         image_url: ''
     });
 
-    const activeStore = stores.find(s => s.owner_id === currentUser?.id || s.vendor_id === currentUser?.id);
+    const activeStore = stores.find(s => s.vendor_id === currentUser?.id);
 
     useEffect(() => {
         if (!isDataLoading && !currentUser) {
@@ -246,7 +246,7 @@ export default function VendorDashboard() {
                                             <div className={adminStyles.uploadBox}>
                                                 <div className={adminStyles.previewContainer} style={{ flex: 1 }}>
                                                     {(editValues.image_url || activeStore.image_url) ? (
-                                                        <img src={editValues.image_url || activeStore.image_url} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '1.5rem' }} />
+                                                        <img src={editValues.image_url || activeStore.image_url || ''} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '1.5rem' }} />
                                                     ) : (
                                                         <div className={adminStyles.placeholderImg}><Upload size={32} /><p>새 사진 업로드</p></div>
                                                     )}

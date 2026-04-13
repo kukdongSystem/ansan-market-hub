@@ -292,7 +292,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         // location이나 keywords 처리 로직 최적화 (기존 필즈 중복 방지)
         if (updates.location !== undefined || updates.keywords !== undefined) {
             const currentStore = stores.find(s => s.id === id);
-            let finalDesc = (updates.description !== undefined ? updates.description : (currentStore?.description || '')).trim();
+            let finalDesc = (updates.description !== undefined ? (updates.description || '') : (currentStore?.description || '')).trim();
             
             // 기존에 박혀있던 특수 태그들 제거 (중복 방지)
             finalDesc = finalDesc.replace(/\[상세위치: .*?\]\n?/g, '').replace(/\[키워드: .*?\]\n?/g, '').trim();

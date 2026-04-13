@@ -9,6 +9,7 @@ import SearchBox from '@/components/SearchBox';
 import Header from '@/components/Header';
 import { useData } from '@/context/DataContext';
 import { CATEGORY_LABELS, StoreCategory } from '@/types';
+import { Language, translations } from '@/constants/translations';
 
 const HERO_IMAGES = [
   {

@@ -377,7 +377,7 @@ export default function AdminDashboard() {
                                         ) : (
                                             <div className={styles.photoDisplay}>
                                                 {selectedStore.image_url ? (
-                                                    <img src={selectedStore.image_url} alt="Store" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '0.75rem' }} />
+                                                    <img src={selectedStore.image_url || ''} alt="Store" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '0.75rem' }} />
                                                 ) : (
                                                     <div className={styles.placeholderImgLarge}>
                                                         <ImageIcon size={48} />
